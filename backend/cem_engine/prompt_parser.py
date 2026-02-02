@@ -12,7 +12,7 @@ except Exception:
   HFPromptParser = None
 
 class PromptParser:
-    """Parse natural language into structured specifications using Claude"""
+    """Parse natural language into structured specifications using a Hugging Face model"""
     
     def __init__(self, hf_model_name: Optional[str] = None):
       """Initialize parser. Prefer a Hugging Face model when `hf_model_name` is provided.
