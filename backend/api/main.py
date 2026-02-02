@@ -31,14 +31,13 @@ app.add_middleware(
 
 # Initialize engines
 CONFIG = {
-    "anthropic_api_key": "your-key-here",
     "octopart_api_key": "your-key-here",
     "csharp_project_path": "../csharp_runtime/RobotCEM",
     "output_dir": "./outputs",
     "template_dir": "../csharp_runtime/RobotCEM/Templates"
 }
 
-cem_engine = CEMEngine(CONFIG["anthropic_api_key"], CONFIG)
+cem_engine = CEMEngine(None, CONFIG)
 code_generator = CSharpCodeGenerator(CONFIG["template_dir"])
 picogk_executor = PicoGKExecutor(
     CONFIG["csharp_project_path"],

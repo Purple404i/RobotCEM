@@ -3,7 +3,7 @@ import json
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 import numpy as np
-from anthropic import Anthropic
+from transformers import pipeline
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -34,9 +34,10 @@ class ValidationResult:
     suggested_fixes: List[str]
 
 class CEMEngine:
-    def __init__(self, anthropic_api_key: str, config: dict):
-        self.client = Anthropic(api_key=anthropic_api_key)
-        self.config = config
+    def __init__(self, anthropic_api_key: Optional[str] = None, config: dict = None):
+        # Initialize HuggingFace model (no API key needed for local models)
+        self.nlp_pipeline = pipeline("text2text-generation", model="google/flan-t5-large")
+        self.config = config or {}
         self.design_rules = self._load_design_rules()
         self.material_database = self._load_material_database()
         self.physics_models = self._load_physics_models()
@@ -218,19 +219,17 @@ class CEMEngine:
         
         logger.info(f"Parsing prompt: {user_prompt[:100]}...")
         
+        prompt_text = f"{system_prompt}\n\nUser prompt:\n{user_prompt}"
+        
         response = await asyncio.to_thread(
-            self.client.messages.create,
-            model="claude-sonnet-4-20250514",
-            max_tokens=4000,
-            temperature=0,
-            messages=[{
-                "role": "user",
-                "content": f"{system_prompt}\n\nUser prompt:\n{user_prompt}"
-            }]
+            self.nlp_pipeline,
+            prompt_text,
+            max_length=4000,
+            do_sample=False
         )
         
         # Extract JSON from response
-        content = response.content[0].text.strip()
+        content = response[0]['generated_text'].strip()
         
         # Remove markdown code blocks if present
         if content.startswith("```json"):

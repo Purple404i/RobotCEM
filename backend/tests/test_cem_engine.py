@@ -5,11 +5,10 @@ from cem_engine.core import CEMEngine, DesignSpecification
 @pytest.fixture
 def cem_engine():
     config = {
-        'anthropic_api_key': 'test-key',
         'csharp_project_path': '../csharp_runtime/RobotCEM',
         'output_dir': './test_outputs'
     }
-    return CEMEngine('test-key', config)
+    return CEMEngine(None, config)
 
 @pytest.mark.asyncio
 async def test_prompt_parsing(cem_engine):

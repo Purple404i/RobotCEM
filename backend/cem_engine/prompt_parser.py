@@ -168,4 +168,4 @@ RULES:
             return spec
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON: {e}\nContent: {content}")
-            raise ValueError(f"Invalid JSON response from Claude: {str(e)}")
+            raise ValueError(f"Invalid JSON response from LLM: {str(e)}")

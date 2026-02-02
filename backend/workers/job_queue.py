@@ -21,7 +21,7 @@ def generate_design_task(job_id: str, prompt: str):
     from cem_engine.core import CEMEngine
     from config import CONFIG
     
-    engine = CEMEngine(CONFIG['anthropic_api_key'], CONFIG)
+    engine = CEMEngine(None, CONFIG)
     
     # This would be the actual generation logic
     # moved from the API endpoint to run in background

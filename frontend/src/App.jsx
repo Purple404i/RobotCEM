@@ -172,7 +172,7 @@ export default function App() {
       <footer className="border-t border-gray-700 bg-gray-900 mt-16">
         <div className="container mx-auto px-6 py-8">
           <div className="text-center text-gray-400 text-sm">
-            <p>Powered by LEAP71 PicoGK, Anthropic Claude, and Three.js</p>
+            <p>Powered by LEAP71 PicoGK, HuggingFace Transformers, and Three.js</p>
             <p className="mt-2">© 2025 Robot CEM Studio</p>
           </div>
         </div>
