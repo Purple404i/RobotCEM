@@ -15,7 +15,7 @@ async def main():
 
     orchestrator = EngineOrchestrator(
         hf_model_name="google/flan-t5-small",
-        csharp_project_path="/path/to/RobotCEM/RobotCEM/",  # update to your local PicoGK project
+        csharp_project_path="/home/devlord/RobotCEM/",  # update to your local PicoGK project
         output_dir="backend/outputs"
     )
 

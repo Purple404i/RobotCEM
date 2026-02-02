@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import './SpecificationPanel.css';
 import { ChevronDown, ChevronRight, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 
 export default function SpecificationPanel({ spec, validation }) {
   const [expandedSections, setExpandedSections] = useState({
+    type: true,
     dimensions: true,
     loads: true,
     materials: true,
@@ -17,16 +19,16 @@ export default function SpecificationPanel({ spec, validation }) {
   };
 
   const Section = ({ title, children, section }) => (
-    <div className="border-b border-gray-700 last:border-0">
+    <div className="spec-section">
       <button
         onClick={() => toggleSection(section)}
-        className="w-full flex items-center justify-between p-4 hover:bg-gray-750 transition-colors"
+        className="spec-section-header"
       >
-        <h3 className="font-semibold text-lg">{title}</h3>
+        <h3 className="spec-section-title">{title}</h3>
         {expandedSections[section] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
       </button>
       {expandedSections[section] && (
-        <div className="px-4 pb-4">
+        <div className="spec-section-content">
           {children}
         </div>
       )}
@@ -34,92 +36,89 @@ export default function SpecificationPanel({ spec, validation }) {
   );
 
   return (
-    <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-4">
-        <h2 className="text-xl font-bold">Design Specification</h2>
+    <div className="spec-panel">
+      <div className="spec-header">
+        <h2 className="spec-header-title">Design Specification</h2>
       </div>
 
       {/* Validation Status */}
       {validation && (
-        <div className={`p-4 ${
-          validation.is_valid ? 'bg-green-900 bg-opacity-20' : 'bg-yellow-900 bg-opacity-20'
-        } border-b border-gray-700`}>
-          <div className="flex items-start gap-3">
+        <div className={`spec-validation ${validation.is_valid ? 'validation-success' : 'validation-warning'}`}>
+          <div className="validation-icon">
             {validation.is_valid ? (
-              <CheckCircle className="text-green-500 flex-shrink-0 mt-1" size={20} />
+              <CheckCircle size={20} />
             ) : (
-              <AlertTriangle className="text-yellow-500 flex-shrink-0 mt-1" size={20} />
+              <AlertTriangle size={20} />
             )}
-            <div className="flex-1">
-              <h3 className="font-semibold mb-2">
-                {validation.is_valid ? 'Design Validated' : 'Design Warnings'}
-              </h3>
-              
-              {validation.warnings && validation.warnings.length > 0 && (
-                <div className="space-y-1 mb-2">
-                  {validation.warnings.map((warning, idx) => (
-                    <p key={idx} className="text-sm text-yellow-200">• {warning}</p>
-                  ))}
-                </div>
-              )}
-              
-              {validation.suggested_fixes && validation.suggested_fixes.length > 0 && (
-                <div className="mt-3 p-3 bg-gray-900 bg-opacity-50 rounded">
-                  <p className="text-sm font-semibold mb-2">Suggested Improvements:</p>
-                  {validation.suggested_fixes.map((fix, idx) => (
-                    <p key={idx} className="text-sm text-gray-300">• {fix}</p>
-                  ))}
-                </div>
-              )}
-            </div>
+          </div>
+          <div className="validation-content">
+            <h3 className="validation-title">
+              {validation.is_valid ? 'Design Validated' : 'Design Warnings'}
+            </h3>
+            
+            {validation.warnings && validation.warnings.length > 0 && (
+              <div className="validation-warnings">
+                {validation.warnings.map((warning, idx) => (
+                  <p key={idx} className="warning-item">• {warning}</p>
+                ))}
+              </div>
+            )}
+            
+            {validation.suggested_fixes && validation.suggested_fixes.length > 0 && (
+              <div className="validation-fixes">
+                <p className="fixes-title">Suggested Improvements:</p>
+                {validation.suggested_fixes.map((fix, idx) => (
+                  <p key={idx} className="fix-item">• {fix}</p>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* Specifications */}
-      <div>
+      <div className="spec-sections">
         <Section title="Device Type" section="type">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-400 mb-1">Type</p>
-              <p className="font-medium capitalize">{spec.device_type.replace('_', ' ')}</p>
+          <div className="spec-grid spec-grid-2">
+            <div className="spec-item">
+              <p className="spec-label">Type</p>
+              <p className="spec-value">{spec.device_type.replace('_', ' ')}</p>
             </div>
-            <div>
-              <p className="text-sm text-gray-400 mb-1">Manufacturing</p>
-              <p className="font-medium">{spec.manufacturing}</p>
+            <div className="spec-item">
+              <p className="spec-label">Manufacturing</p>
+              <p className="spec-value">{spec.manufacturing}</p>
             </div>
           </div>
         </Section>
 
         <Section title="Dimensions" section="dimensions">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="spec-grid spec-grid-3">
             {Object.entries(spec.dimensions || {}).map(([key, value]) => (
-              <div key={key}>
-                <p className="text-sm text-gray-400 mb-1 capitalize">{key.replace('_', ' ')}</p>
-                <p className="font-medium">{value} mm</p>
+              <div key={key} className="spec-item">
+                <p className="spec-label">{key.replace('_', ' ')}</p>
+                <p className="spec-value">{value} mm</p>
               </div>
             ))}
           </div>
         </Section>
 
         <Section title="Loads & Forces" section="loads">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="spec-grid spec-grid-3">
             {Object.entries(spec.loads || {}).map(([key, value]) => (
-              <div key={key}>
-                <p className="text-sm text-gray-400 mb-1 capitalize">{key.replace('_', ' ')}</p>
-                <p className="font-medium">{value} {key.includes('kg') ? 'kg' : key.includes('torque') ? 'N·m' : 'N'}</p>
+              <div key={key} className="spec-item">
+                <p className="spec-label">{key.replace('_', ' ')}</p>
+                <p className="spec-value">
+                  {value} {key.includes('kg') ? 'kg' : key.includes('torque') ? 'N·m' : 'N'}
+                </p>
               </div>
             ))}
           </div>
         </Section>
 
         <Section title="Materials" section="materials">
-          <div className="flex flex-wrap gap-2">
+          <div className="spec-materials">
             {spec.materials && spec.materials.map((material, idx) => (
-              <span
-                key={idx}
-                className="px-3 py-1 bg-blue-600 bg-opacity-30 border border-blue-500 rounded-full text-sm"
-              >
+              <span key={idx} className="material-badge">
                 {material}
               </span>
             ))}
@@ -128,25 +127,23 @@ export default function SpecificationPanel({ spec, validation }) {
 
         <Section title="Components" section="components">
           {spec.components && spec.components.length > 0 ? (
-            <div className="space-y-3">
+            <div className="spec-components">
               {spec.components.map((component, idx) => (
-                <div key={idx} className="p-3 bg-gray-900 rounded-lg">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-medium">{component.name || component.type}</p>
-                      {component.mpn && (
-                        <p className="text-sm text-gray-400 font-mono mt-1">MPN: {component.mpn}</p>
-                      )}
-                    </div>
-                    <span className="px-2 py-1 bg-blue-600 rounded text-sm">
-                      Qty: {component.quantity}
-                    </span>
+                <div key={idx} className="component-card">
+                  <div className="component-info">
+                    <p className="component-name">{component.name || component.type}</p>
+                    {component.mpn && (
+                      <p className="component-mpn">MPN: {component.mpn}</p>
+                    )}
                   </div>
+                  <span className="component-qty">
+                    Qty: {component.quantity}
+                  </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-400 text-sm">No components specified</p>
+            <p className="spec-empty">No components specified</p>
           )}
         </Section>
       </div>

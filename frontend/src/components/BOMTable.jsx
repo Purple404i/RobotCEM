@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './BOMTable.css';
 import { Download, ExternalLink, Package, DollarSign, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export default function BOMTable({ bom }) {
@@ -8,9 +9,9 @@ export default function BOMTable({ bom }) {
 
   if (!bom || !bom.items) {
     return (
-      <div className="bg-gray-800 rounded-lg border border-gray-700 p-8 text-center">
-        <Package size={48} className="mx-auto mb-4 text-gray-600" />
-        <p className="text-gray-400">No Bill of Materials generated yet</p>
+      <div className="bom-empty">
+        <Package size={48} className="bom-empty-icon" />
+        <p className="bom-empty-text">No Bill of Materials generated yet</p>
       </div>
     );
   }
@@ -83,12 +84,12 @@ export default function BOMTable({ bom }) {
 
   const getCategoryColor = (category) => {
     const colors = {
-      '3D Printed Parts': 'bg-blue-500',
-      'Electronic Components': 'bg-purple-500',
-      'Hardware': 'bg-green-500',
-      'Mechanical': 'bg-orange-500'
+      '3D Printed Parts': 'category-blue',
+      'Electronic Components': 'category-purple',
+      'Hardware': 'category-green',
+      'Mechanical': 'category-orange'
     };
-    return colors[category] || 'bg-gray-500';
+    return colors[category] || 'category-gray';
   };
 
   const getStockStatus = (item) => {
@@ -98,38 +99,32 @@ export default function BOMTable({ bom }) {
     const needed = item.quantity;
     
     if (stock >= needed * 10) {
-      return { icon: CheckCircle, color: 'text-green-500', text: 'In Stock' };
+      return { icon: CheckCircle, color: 'stock-good', text: 'In Stock' };
     } else if (stock >= needed) {
-      return { icon: AlertTriangle, color: 'text-yellow-500', text: 'Low Stock' };
+      return { icon: AlertTriangle, color: 'stock-low', text: 'Low Stock' };
     } else {
-      return { icon: AlertTriangle, color: 'text-red-500', text: 'Insufficient' };
+      return { icon: AlertTriangle, color: 'stock-out', text: 'Insufficient' };
     }
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+    <div className="bom-container">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <div className="bom-header">
+        <div className="bom-header-content">
+          <div className="bom-title-section">
             <Package size={28} />
             <div>
-              <h2 className="text-2xl font-bold">Bill of Materials</h2>
-              <p className="text-sm text-blue-100">Complete component breakdown with real-time pricing</p>
+              <h2 className="bom-title">Bill of Materials</h2>
+              <p className="bom-subtitle">Complete component breakdown with real-time pricing</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={exportCSV}
-              className="flex items-center gap-2 px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded transition-colors"
-            >
+          <div className="bom-export-buttons">
+            <button onClick={exportCSV} className="export-btn">
               <Download size={18} />
               CSV
             </button>
-            <button
-              onClick={exportJSON}
-              className="flex items-center gap-2 px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded transition-colors"
-            >
+            <button onClick={exportJSON} className="export-btn">
               <Download size={18} />
               JSON
             </button>
@@ -138,56 +133,52 @@ export default function BOMTable({ bom }) {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-gray-900">
-        <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-          <div className="flex items-center gap-2 text-gray-400 text-sm mb-2">
+      <div className="bom-summary">
+        <div className="summary-card">
+          <div className="summary-label">
             <Package size={16} />
             Total Items
           </div>
-          <div className="text-3xl font-bold">{bom.summary.item_count}</div>
-          <div className="text-xs text-gray-500 mt-1">Unique components</div>
+          <div className="summary-value">{bom.summary.item_count}</div>
+          <div className="summary-hint">Unique components</div>
         </div>
         
-        <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-          <div className="flex items-center gap-2 text-gray-400 text-sm mb-2">
+        <div className="summary-card">
+          <div className="summary-label">
             <DollarSign size={16} />
             Subtotal
           </div>
-          <div className="text-3xl font-bold">${bom.summary.subtotal_usd.toFixed(2)}</div>
-          <div className="text-xs text-gray-500 mt-1">Before tax & shipping</div>
+          <div className="summary-value">${bom.summary.subtotal_usd.toFixed(2)}</div>
+          <div className="summary-hint">Before tax & shipping</div>
         </div>
         
-        <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-          <div className="flex items-center gap-2 text-gray-400 text-sm mb-2">
+        <div className="summary-card">
+          <div className="summary-label">
             <TrendingUp size={16} />
             Total Cost
           </div>
-          <div className="text-3xl font-bold text-green-400">${bom.summary.total_usd.toFixed(2)}</div>
-          <div className="text-xs text-gray-500 mt-1">Incl. tax & shipping</div>
+          <div className="summary-value summary-value-accent">${bom.summary.total_usd.toFixed(2)}</div>
+          <div className="summary-hint">Incl. tax & shipping</div>
         </div>
         
-        <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-          <div className="flex items-center gap-2 text-gray-400 text-sm mb-2">
+        <div className="summary-card">
+          <div className="summary-label">
             Weight
           </div>
-          <div className="text-3xl font-bold">{bom.summary.total_weight_g.toFixed(0)}g</div>
-          <div className="text-xs text-gray-500 mt-1">Total assembly weight</div>
+          <div className="summary-value">{bom.summary.total_weight_g.toFixed(0)}g</div>
+          <div className="summary-hint">Total assembly weight</div>
         </div>
       </div>
 
       {/* Category Filter */}
-      <div className="px-6 py-3 bg-gray-900 border-t border-b border-gray-700">
-        <div className="flex items-center gap-2 overflow-x-auto">
-          <span className="text-sm text-gray-400 whitespace-nowrap">Filter:</span>
+      <div className="bom-filter">
+        <span className="filter-label">Filter:</span>
+        <div className="filter-buttons">
           {categories.map(cat => (
             <button
               key={cat}
               onClick={() => setFilterCategory(cat)}
-              className={`px-3 py-1 rounded text-sm whitespace-nowrap transition-colors ${
-                filterCategory === cat
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-              }`}
+              className={`filter-btn ${filterCategory === cat ? 'filter-btn-active' : ''}`}
             >
               {cat === 'all' ? 'All' : cat}
             </button>
@@ -196,62 +187,73 @@ export default function BOMTable({ bom }) {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-900 border-b border-gray-700 sticky top-0">
+      <div className="bom-table-wrapper">
+        <table className="bom-table">
+          <thead className="bom-table-head">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">
-                Category
+              <th className="bom-th">Category</th>
+              <th className="bom-th bom-th-sortable" onClick={() => toggleSort('item')}>
+                <div className="bom-th-content">
+                  Item
+                  {sortBy === 'item' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                </div>
               </th>
-              {['Item', 'MPN', 'Qty', 'Unit Cost', 'Total', 'Supplier', 'Stock'].map(field => (
-                <th
-                  key={field}
-                  onClick={() => toggleSort(field.toLowerCase().replace(' ', '_') + '_usd')}
-                  className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-gray-800 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    {field}
-                    {sortBy.includes(field.toLowerCase()) && (
-                      <span className="text-blue-400">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                    )}
-                  </div>
-                </th>
-              ))}
-              <th className="px-4 py-3"></th>
+              <th className="bom-th">MPN</th>
+              <th className="bom-th bom-th-sortable" onClick={() => toggleSort('quantity')}>
+                <div className="bom-th-content">
+                  Qty
+                  {sortBy === 'quantity' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                </div>
+              </th>
+              <th className="bom-th bom-th-sortable" onClick={() => toggleSort('unit_cost_usd')}>
+                <div className="bom-th-content">
+                  Unit Cost
+                  {sortBy === 'unit_cost_usd' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                </div>
+              </th>
+              <th className="bom-th bom-th-sortable" onClick={() => toggleSort('total_cost_usd')}>
+                <div className="bom-th-content">
+                  Total
+                  {sortBy === 'total_cost_usd' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                </div>
+              </th>
+              <th className="bom-th">Supplier</th>
+              <th className="bom-th">Stock</th>
+              <th className="bom-th"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-700">
+          <tbody className="bom-table-body">
             {sortedItems.map((item, idx) => {
               const stockStatus = getStockStatus(item);
               
               return (
-                <tr key={idx} className="hover:bg-gray-750 transition-colors">
-                  <td className="px-4 py-3">
-                    <span className={`inline-block px-2 py-1 rounded text-xs font-medium text-white ${getCategoryColor(item.category)}`}>
+                <tr key={idx} className="bom-tr">
+                  <td className="bom-td">
+                    <span className={`category-badge ${getCategoryColor(item.category)}`}>
                       {item.category}
                     </span>
                   </td>
-                  <td className="px-4 py-3 font-medium">{item.item}</td>
-                  <td className="px-4 py-3 text-sm text-gray-400 font-mono">{item.mpn || 'N/A'}</td>
-                  <td className="px-4 py-3 text-center">{item.quantity}</td>
-                  <td className="px-4 py-3 font-mono">${item.unit_cost_usd.toFixed(2)}</td>
-                  <td className="px-4 py-3 font-mono font-semibold">${item.total_cost_usd.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-sm">{item.supplier}</td>
-                  <td className="px-4 py-3">
+                  <td className="bom-td bom-td-item">{item.item}</td>
+                  <td className="bom-td bom-td-mono">{item.mpn || 'N/A'}</td>
+                  <td className="bom-td bom-td-center">{item.quantity}</td>
+                  <td className="bom-td bom-td-mono">${item.unit_cost_usd.toFixed(2)}</td>
+                  <td className="bom-td bom-td-mono bom-td-bold">${item.total_cost_usd.toFixed(2)}</td>
+                  <td className="bom-td">{item.supplier}</td>
+                  <td className="bom-td">
                     {stockStatus && (
-                      <div className="flex items-center gap-2">
+                      <div className="stock-status">
                         <stockStatus.icon size={16} className={stockStatus.color} />
-                        <span className={`text-sm ${stockStatus.color}`}>{stockStatus.text}</span>
+                        <span className={`stock-text ${stockStatus.color}`}>{stockStatus.text}</span>
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="bom-td">
                     {item.mpn && (
                       <a
                         href={`https://octopart.com/search?q=${item.mpn}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-300 transition-colors"
+                        className="external-link"
                       >
                         <ExternalLink size={16} />
                       </a>
@@ -265,25 +267,23 @@ export default function BOMTable({ bom }) {
       </div>
 
       {/* Cost Breakdown */}
-      <div className="p-6 bg-gray-900 border-t border-gray-700">
-        <div className="max-w-md ml-auto space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-400">Subtotal:</span>
-            <span className="font-mono">${bom.summary.subtotal_usd.toFixed(2)}</span>
+      <div className="bom-footer">
+        <div className="cost-breakdown">
+          <div className="cost-row">
+            <span className="cost-label">Subtotal:</span>
+            <span className="cost-value">${bom.summary.subtotal_usd.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-400">Shipping (est.):</span>
-            <span className="font-mono">${bom.summary.shipping_usd.toFixed(2)}</span>
+          <div className="cost-row">
+            <span className="cost-label">Shipping (est.):</span>
+            <span className="cost-value">${bom.summary.shipping_usd.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-400">Tax (est.):</span>
-            <span className="font-mono">${bom.summary.tax_usd.toFixed(2)}</span>
+          <div className="cost-row">
+            <span className="cost-label">Tax (est.):</span>
+            <span className="cost-value">${bom.summary.tax_usd.toFixed(2)}</span>
           </div>
-          <div className="border-t border-gray-700 pt-2 mt-2">
-            <div className="flex justify-between text-lg font-bold">
-              <span>Total:</span>
-              <span className="text-green-400">${bom.summary.total_usd.toFixed(2)}</span>
-            </div>
+          <div className="cost-row cost-row-total">
+            <span className="cost-label-total">Total:</span>
+            <span className="cost-value-total">${bom.summary.total_usd.toFixed(2)}</span>
           </div>
         </div>
       </div>

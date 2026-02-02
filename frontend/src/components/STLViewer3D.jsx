@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import './STLViewer3D.css';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
@@ -17,7 +18,7 @@ export default function STLViewer3D({ stlUrl, onAnalysis }) {
 
     // Scene setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x1a1a2e);
+    scene.background = new THREE.Color(0x0a0e1a);
     sceneRef.current = scene;
 
     // Camera
@@ -65,7 +66,7 @@ export default function STLViewer3D({ stlUrl, onAnalysis }) {
     scene.add(directionalLight3);
 
     // Grid
-    const gridHelper = new THREE.GridHelper(500, 50, 0x444444, 0x222222);
+    const gridHelper = new THREE.GridHelper(500, 50, 0x333344, 0x1a1a2e);
     scene.add(gridHelper);
 
     // Load STL
@@ -196,49 +197,60 @@ export default function STLViewer3D({ stlUrl, onAnalysis }) {
   };
 
   return (
-    <div className="relative w-full h-full">
-      <div ref={mountRef} className="w-full h-full" />
+    <div className="stl-viewer">
+      <div ref={mountRef} className="stl-canvas" />
       
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-white">Loading 3D Model...</p>
+        <div className="stl-loading">
+          <div className="loading-content">
+            <div className="loading-spinner"></div>
+            <p className="loading-text">Loading 3D Model...</p>
           </div>
         </div>
       )}
 
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75">
-          <div className="bg-red-500 text-white p-4 rounded">
+        <div className="stl-error">
+          <div className="error-content">
             {error}
           </div>
         </div>
       )}
 
       {meshInfo && !loading && (
-        <div className="absolute top-4 right-4 bg-gray-800 bg-opacity-90 text-white p-4 rounded shadow-lg">
-          <h3 className="font-bold mb-2">Model Info</h3>
-          <div className="text-sm space-y-1">
-            <p>Vertices: {meshInfo.vertices.toLocaleString()}</p>
-            <p>Faces: {meshInfo.faces.toLocaleString()}</p>
-            <p>Size: {meshInfo.dimensions.x} × {meshInfo.dimensions.y} × {meshInfo.dimensions.z} mm</p>
-            <p>Volume: {meshInfo.volume.toFixed(2)} cm³</p>
+        <div className="stl-controls">
+          <h3 className="controls-title">Model Info</h3>
+          <div className="model-info">
+            <div className="info-item">
+              <span className="info-label">Vertices:</span>
+              <span className="info-value">{meshInfo.vertices.toLocaleString()}</span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">Faces:</span>
+              <span className="info-value">{meshInfo.faces.toLocaleString()}</span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">Size:</span>
+              <span className="info-value">
+                {meshInfo.dimensions.x} × {meshInfo.dimensions.y} × {meshInfo.dimensions.z} mm
+              </span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">Volume:</span>
+              <span className="info-value">{meshInfo.volume.toFixed(2)} cm³</span>
+            </div>
           </div>
           
-          <div className="mt-4 space-y-2">
-            <button
-              onClick={toggleWireframe}
-              className="w-full px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
-            >
+          <div className="controls-actions">
+            <button onClick={toggleWireframe} className="control-btn">
               Toggle Wireframe
             </button>
             
-            <div className="flex gap-2">
-              <button onClick={() => changeColor(0x00d4ff)} className="flex-1 h-6 bg-cyan-400 rounded"></button>
-              <button onClick={() => changeColor(0xff6b6b)} className="flex-1 h-6 bg-red-400 rounded"></button>
-              <button onClick={() => changeColor(0x4ecdc4)} className="flex-1 h-6 bg-teal-400 rounded"></button>
-              <button onClick={() => changeColor(0xffd93d)} className="flex-1 h-6 bg-yellow-400 rounded"></button>
+            <div className="color-picker">
+              <button onClick={() => changeColor(0x00d4ff)} className="color-btn color-cyan" title="Cyan"></button>
+              <button onClick={() => changeColor(0xff6b6b)} className="color-btn color-red" title="Red"></button>
+              <button onClick={() => changeColor(0x4ecdc4)} className="color-btn color-teal" title="Teal"></button>
+              <button onClick={() => changeColor(0xffd93d)} className="color-btn color-yellow" title="Yellow"></button>
             </div>
           </div>
         </div>

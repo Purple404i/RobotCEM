@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Wand2, Loader2 } from 'lucide-react';
 
 export default function PromptInterface({ onGenerate, loading }) {
   const [prompt, setPrompt] = useState('');
   const [showExamples, setShowExamples] = useState(false);
+  const textareaRef = useRef(null);
 
   const examples = [
     "Build a 4-axis robot arm with 200mm reach, capable of lifting 500g, using MG996R servos, 3D printable in PLA",
@@ -11,6 +12,19 @@ export default function PromptInterface({ onGenerate, loading }) {
     "Create a 2-DOF pan-tilt mechanism for a camera, using 28BYJ-48 stepper motors, lightweight design",
     "Generate a linear actuator with 100mm stroke, lead screw driven, aluminum frame with 3D printed components"
   ];
+
+  // Auto-resize textarea based on content
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      // Reset height to auto to get the correct scrollHeight
+      textarea.style.height = 'auto';
+      
+      // Calculate new height (min 150px, max 400px)
+      const newHeight = Math.max(150, Math.min(textarea.scrollHeight, 400));
+      textarea.style.height = `${newHeight}px`;
+    }
+  }, [prompt]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -24,19 +38,26 @@ export default function PromptInterface({ onGenerate, loading }) {
     setShowExamples(false);
   };
 
+  const handleTextareaChange = (e) => {
+    setPrompt(e.target.value);
+  };
+
   return (
     <div className="w-full max-w-4xl mx-auto">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="relative">
           <textarea
+            ref={textareaRef}
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={handleTextareaChange}
             placeholder="Describe your device in detail: dimensions, loads, materials, components..."
-            className="w-full p-4 pr-12 border-2 border-gray-700 rounded-lg bg-gray-800 text-white resize-none focus:border-blue-500 focus:outline-none transition-colors"
-            rows="6"
+            className="w-full p-4 pr-12 border-2 border-gray-700 rounded-lg bg-gray-800 text-white resize-y focus:border-blue-500 focus:outline-none transition-colors min-h-[150px] max-h-[400px]"
+            style={{ 
+              height: '150px',
+              overflow: 'auto'
+            }}
             disabled={loading}
           />
-          
           <button
             type="button"
             onClick={() => setShowExamples(!showExamples)}
@@ -67,7 +88,6 @@ export default function PromptInterface({ onGenerate, loading }) {
           <div className="text-sm text-gray-400">
             {prompt.length} / 2000 characters
           </div>
-          
           <button
             type="submit"
             disabled={loading || !prompt.trim()}

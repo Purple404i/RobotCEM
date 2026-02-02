@@ -5,7 +5,10 @@
   },
   "libraries": {},
   "projectFileDependencyGroups": {
-    "net9.0": []
+    "net9.0": [
+      "System.Numerics.Vectors >= 4.5.0",
+      "System.Text.Json >= 7.0.3"
+    ]
   },
   "packageFolders": {
     "/home/devlord/.nuget/packages/": {}
@@ -49,6 +52,16 @@
     "frameworks": {
       "net9.0": {
         "targetAlias": "net9.0",
+        "dependencies": {
+          "System.Numerics.Vectors": {
+            "target": "Package",
+            "version": "[4.5.0, )"
+          },
+          "System.Text.Json": {
+            "target": "Package",
+            "version": "[7.0.3, )"
+          }
+        },
         "imports": [
           "net461",
           "net462",
@@ -82,5 +95,23 @@
         "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.100/PortableRuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1301",
+      "level": "Error",
+      "message": "Unable to load the service index for source https://api.nuget.org/v3/index.json.\n  Resource temporarily unavailable (api.nuget.org:443)\n  Resource temporarily unavailable"
+    },
+    {
+      "code": "NU1301",
+      "level": "Error",
+      "message": "Unable to load the service index for source https://api.nuget.org/v3/index.json.\n  Resource temporarily unavailable (api.nuget.org:443)\n  Resource temporarily unavailable"
+    },
+    {
+      "code": "NU1900",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json."
+    }
+  ]
 }

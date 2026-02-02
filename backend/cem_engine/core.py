@@ -227,7 +227,7 @@ class CEMEngine:
                 asyncio.to_thread(
                     self.nlp_pipeline,
                     prompt_text,
-                    max_length=800,
+                    max_length=2000,
                     do_sample=False
                 ),
                 timeout=15.0

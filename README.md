@@ -10,7 +10,7 @@ AI-powered Computational Engineering Model system for robot design.
 
 # Start backend
 cd backend
-source venv/bin/activate
+source dw_env/bin/activate
 uvicorn api.main:app --reload
 
 # Start frontend (in new terminal)
@@ -29,7 +29,9 @@ npm run dev
 - Python 3.11+
 - Node.js 18+
 - .NET 7.0+
-- Anthropic API key
+
+## Dependencies 
+Leap 71's Github repositories
 
 ## Documentation
 
