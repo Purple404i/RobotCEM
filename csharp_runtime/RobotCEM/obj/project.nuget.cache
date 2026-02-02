@@ -1,10 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "jzNKjQRIPdc=",
+  "dgSpecHash": "Df2RSNn3X18=",
   "success": true,
   "projectFilePath": "/home/devlord/RobotCEM/csharp_runtime/RobotCEM/RobotCEM.csproj",
   "expectedPackageFiles": [
-    "/home/devlord/.nuget/packages/microsoft.aspnetcore.app.ref/10.0.0/microsoft.aspnetcore.app.ref.10.0.0.nupkg.sha512"
+    "/home/devlord/.nuget/packages/microsoft.netcore.app.ref/9.0.11/microsoft.netcore.app.ref.9.0.11.nupkg.sha512",
+    "/home/devlord/.nuget/packages/microsoft.aspnetcore.app.ref/9.0.11/microsoft.aspnetcore.app.ref.9.0.11.nupkg.sha512",
+    "/home/devlord/.nuget/packages/microsoft.netcore.app.host.linux-x64/9.0.11/microsoft.netcore.app.host.linux-x64.9.0.11.nupkg.sha512"
   ],
   "logs": []
 }

@@ -36,7 +36,7 @@ class ValidationResult:
 class CEMEngine:
     def __init__(self, anthropic_api_key: Optional[str] = None, config: dict = None):
         # Initialize HuggingFace model (no API key needed for local models)
-        self.nlp_pipeline = pipeline("text2text-generation", model="google/flan-t5-large")
+        self.nlp_pipeline = pipeline("text-generation", model="gpt2")
         self.config = config or {}
         self.design_rules = self._load_design_rules()
         self.material_database = self._load_material_database()
@@ -217,19 +217,32 @@ class CEMEngine:
         If information is missing, make engineering assumptions and note them.
         Return ONLY the JSON object, no markdown, no explanations."""
         
-        logger.info(f"Parsing prompt: {user_prompt[:100]}...")
-        
+        logger.info(f"Parsing prompt start: {user_prompt[:200]!r}")
+
         prompt_text = f"{system_prompt}\n\nUser prompt:\n{user_prompt}"
-        
-        response = await asyncio.to_thread(
-            self.nlp_pipeline,
-            prompt_text,
-            max_length=4000,
-            do_sample=False
-        )
+
+        try:
+            # Limit time spent calling heavy local models so UI stays responsive
+            response = await asyncio.wait_for(
+                asyncio.to_thread(
+                    self.nlp_pipeline,
+                    prompt_text,
+                    max_length=800,
+                    do_sample=False
+                ),
+                timeout=15.0
+            )
+            logger.info("Parsing prompt completed; processing output")
+        except asyncio.TimeoutError:
+            logger.warning("NLP pipeline timeout - falling back to simple parser")
+            return self._simple_parse(user_prompt)
+        except Exception:
+            logger.exception("NLP pipeline failed during parse_prompt - falling back to simple parser")
+            return self._simple_parse(user_prompt)
         
         # Extract JSON from response
-        content = response[0]['generated_text'].strip()
+        content = response[0].get('generated_text', '').strip()
+        logger.info(f"NLP raw output (truncated): {content[:400]!r}")
         
         # Remove markdown code blocks if present
         if content.startswith("```json"):
@@ -438,3 +451,59 @@ Status: {'✓ PASS' if validation.is_valid else '✗ FAIL'}
                 report += f"- Max Temperature: {props.get('max_temp', 'N/A')}°C\n"
         
         return report
+
+    def _simple_parse(self, user_prompt: str) -> DesignSpecification:
+        """Fallback simple parser that extracts a few common fields from the prompt."""
+        import re
+
+        # Defaults
+        device_type = 'custom'
+        length = None
+        payload = None
+        material = 'PLA'
+
+        # Simple heuristics
+        if 'gripper' in user_prompt.lower():
+            device_type = 'gripper'
+        if 'arm' in user_prompt.lower():
+            device_type = 'robot_arm'
+
+        m_len = re.search(r"(\d+(?:\.\d+)?)\s*(mm|cm|m)", user_prompt.lower())
+        if m_len:
+            val, unit = m_len.groups()
+            val = float(val)
+            if unit == 'cm':
+                val = val * 10
+            elif unit == 'm':
+                val = val * 1000
+            length = val
+
+        m_payload = re.search(r"(\d+(?:\.\d+)?)\s*(kg|g)", user_prompt.lower())
+        if m_payload:
+            val, unit = m_payload.groups()
+            val = float(val)
+            if unit == 'g':
+                val = val / 1000.0
+            payload = val
+
+        for mat in ['PLA', 'ABS', 'PETG', 'Nylon', 'Aluminum']:
+            if mat.lower() in user_prompt.lower():
+                material = mat
+                break
+
+        spec = DesignSpecification(
+            device_type=device_type,
+            dimensions={ 'length': length or 100.0, 'width': 50.0, 'height': 30.0 },
+            loads={ 'payload': payload or 0.1 },
+            motion_constraints={ 'dof': 1 },
+            material_preferences=[material],
+            manufacturing_method='FDM',
+            components=[],
+            environmental_conditions={},
+            safety_factor=2.0,
+            tolerance=0.1,
+            finish_requirements='as_printed'
+        )
+
+        logger.info(f"Simple parser produced spec: device_type={spec.device_type}, length={spec.dimensions.get('length')}, payload={spec.loads.get('payload')}")
+        return spec

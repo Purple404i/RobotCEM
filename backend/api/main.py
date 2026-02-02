@@ -114,9 +114,11 @@ async def generate_design(request: GenerateRequest):
         progress=0,
         current_step="Initializing"
     )
+    logger.info(f"Job {job_id} enqueued by user {request.user_id}")
     
     # Start background task
-    asyncio.create_task(process_design_job(job_id, request))
+    task = asyncio.create_task(process_design_job(job_id, request))
+    logger.info(f"Background task started for job {job_id}: {task.get_name() if hasattr(task, 'get_name') else task}")
     
     return GenerateResponse(
         job_id=job_id,

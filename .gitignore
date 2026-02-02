@@ -1,1 +1,43 @@
 .env
+# Python virtual envs
+dw_env/
+venv/
+
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Node
+node_modules/
+frontend/node_modules/
+
+# Build outputs
+dist/
+build/
+frontend/dist/
+
+# Logs and runtime outputs
+logs/
+backend/logs/
+backend/outputs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# C# build artifacts
+**/bin/
+**/obj/
+*.user
+*.suo
+
+# Environment files
+.env.local
+.env.*.local

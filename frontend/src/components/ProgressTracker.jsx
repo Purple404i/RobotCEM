@@ -1,4 +1,5 @@
 import React from 'react';
+import './progress.css';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function ProgressTracker({ status }) {
