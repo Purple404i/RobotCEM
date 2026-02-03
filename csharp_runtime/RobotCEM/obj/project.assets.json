@@ -1,69 +1,11 @@
 {
   "version": 3,
   "targets": {
-    "net10.0": {
-      "LatticeLibrary/1.0.0": {
-        "type": "project",
-        "framework": ".NETCoreApp,Version=v10.0",
-        "dependencies": {
-          "PicoGK": "1.7.7.5",
-          "ShapeKernel": "1.0.0"
-        },
-        "compile": {
-          "bin/placeholder/LatticeLibrary.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/LatticeLibrary.dll": {}
-        }
-      },
-      "PicoGK/1.7.7.5": {
-        "type": "project",
-        "framework": ".NETCoreApp,Version=v9.0",
-        "compile": {
-          "bin/placeholder/PicoGK.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/PicoGK.dll": {}
-        }
-      },
-      "ShapeKernel/1.0.0": {
-        "type": "project",
-        "framework": ".NETCoreApp,Version=v10.0",
-        "dependencies": {
-          "PicoGK": "1.7.7.5"
-        },
-        "compile": {
-          "bin/placeholder/ShapeKernel.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/ShapeKernel.dll": {}
-        }
-      }
-    }
+    "net10.0": {}
   },
-  "libraries": {
-    "LatticeLibrary/1.0.0": {
-      "type": "project",
-      "path": "../submodules/LEAP71_LatticeLibrary/LatticeLibrary.csproj",
-      "msbuildProject": "../submodules/LEAP71_LatticeLibrary/LatticeLibrary.csproj"
-    },
-    "PicoGK/1.7.7.5": {
-      "type": "project",
-      "path": "../submodules/PicoGK/PicoGK.csproj",
-      "msbuildProject": "../submodules/PicoGK/PicoGK.csproj"
-    },
-    "ShapeKernel/1.0.0": {
-      "type": "project",
-      "path": "../submodules/LEAP71_ShapeKernel/ShapeKernel.csproj",
-      "msbuildProject": "../submodules/LEAP71_ShapeKernel/ShapeKernel.csproj"
-    }
-  },
+  "libraries": {},
   "projectFileDependencyGroups": {
-    "net10.0": [
-      "LatticeLibrary >= 1.0.0",
-      "PicoGK >= 1.7.7.5",
-      "ShapeKernel >= 1.0.0"
-    ]
+    "net10.0": []
   },
   "packageFolders": {
     "/home/devlord/.nuget/packages/": {}
@@ -89,17 +31,7 @@
       "frameworks": {
         "net10.0": {
           "targetAlias": "net10.0",
-          "projectReferences": {
-            "/home/devlord/RobotCEM/csharp_runtime/submodules/LEAP71_LatticeLibrary/LatticeLibrary.csproj": {
-              "projectPath": "/home/devlord/RobotCEM/csharp_runtime/submodules/LEAP71_LatticeLibrary/LatticeLibrary.csproj"
-            },
-            "/home/devlord/RobotCEM/csharp_runtime/submodules/LEAP71_ShapeKernel/ShapeKernel.csproj": {
-              "projectPath": "/home/devlord/RobotCEM/csharp_runtime/submodules/LEAP71_ShapeKernel/ShapeKernel.csproj"
-            },
-            "/home/devlord/RobotCEM/csharp_runtime/submodules/PicoGK/PicoGK.csproj": {
-              "projectPath": "/home/devlord/RobotCEM/csharp_runtime/submodules/PicoGK/PicoGK.csproj"
-            }
-          }
+          "projectReferences": {}
         }
       },
       "warningProperties": {

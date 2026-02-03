@@ -6,7 +6,9 @@ import BOMTable from './components/BOMTable';
 import ProgressTracker from './components/ProgressTracker';
 import SpecificationPanel from './components/SpecificationPanel';
 import { AlertCircle, CheckCircle, Loader2, Sparkles } from 'lucide-react';
-
+import RobotCEMViewer, { useRobotCEMDesign } from './components/RobotCEMViewer';
+import axios from 'axios';
+//TODO: use the RobotCEMViewer hook to fetch and display design data
 const API_BASE = 'http://localhost:8000';
 
 export default function App() {

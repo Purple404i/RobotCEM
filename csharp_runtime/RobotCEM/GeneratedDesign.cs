@@ -1,75 +1,107 @@
-
-using PicoGK;
 using Leap71.ShapeKernel;
 using Leap71.LatticeLibrary;
+using PicoGK;
 using System;
+using System.IO;
 using System.Numerics;
-using System.Collections.Generic;
 
-namespace GeneratedCEM
+namespace RobotCEM.Generated
 {
-    class Program
+    public class GeneratedDesign
     {
-        static void Main()
-        {
-            Library.Go(
-                0.5f,  // Voxel size in mm
-                Run
-            );
-        }
-
-        static void Run()
+        public static void Task()
         {
             try
             {
-                Console.WriteLine("Generating custom...");
+                Library.Log("╔════════════════════════════════════════╗");
+                Library.Log("║   RobotCEM Design Generation Started  ║");
+                Library.Log("╚════════════════════════════════════════╝");
                 
-                CustomDevice device = new CustomDevice(
-                    
+                // Design parameters
+                string deviceType = "test_component";
+                float safetyFactor = 1.5f;
+                
+                Library.Log($"Device Type: {deviceType}");
+                Library.Log($"Safety Factor: {safetyFactor}");
+                Library.Log($"Voxel Size: {Library.fVoxelSizeMM}mm");
+                
+
+                // Create Sphere using ShapeKernel
+                BaseSphere oSphere = new BaseSphere(
+                    new LocalFrame(), 
+                    15f
                 );
+                Voxels voxShape = oSphere.voxConstruct();
+                Library.Log($"Created sphere with radius {oSphere.fRadius} mm");
+
+
+                // Apply lattice infill for weight reduction
+                Library.Log("Applying BodyCentered lattice with beam thickness 2.0mm");
                 
-                Voxels voxResult = device.Generate();
+                ICellArray xCellArray = new RegularCellArray(voxShape, 20, 20, 20);
+                ILatticeType xLatticeType = new BodyCenteredLattice();
+                IBeamThickness xBeamThickness = new ConstantBeamThickness(2.0f);
+                xBeamThickness.SetBoundingVoxels(voxShape);
+
+                uint nSubSample = 5;
+                Voxels voxLattice = voxGetFinalLatticeGeometry(
+                    xCellArray,
+                    xLatticeType,
+                    xBeamThickness,
+                    nSubSample);
+
+                // Boolean intersection to combine lattice with base shape
+                Voxels voxFinal = voxShape & voxLattice;
+                Library.Log("Lattice infill applied successfully");
+
+                // Convert to mesh
+                Library.Log("Converting voxels to triangulated mesh...");
+                Mesh msh = new Mesh(voxFinal);
                 
-                // Export
-                Library.oViewer().Add(voxResult);
-                Voxels.SaveToStlFile(voxResult, "output.stl");
+                Library.Log($"Mesh statistics:");
+                Library.Log($"  - Triangles: {msh.nTriangleCount()}");
+                Library.Log($"  - Vertices: {msh.nVertexCount()}");
+                
+                // Export STL
+                string outputPath = Path.Combine(Library.strLogFolder, "test_design.stl");
+                Library.Log($"Saving to: {outputPath}");
+                msh.SaveToStlFile(outputPath);
                 
                 // Export metadata
-                System.IO.File.WriteAllText(
-                    "output_meta.json",
-                    device.GetMetadata()
-                );
+                var metadata = new
+                {
+                    DeviceType = deviceType,
+                    SafetyFactor = safetyFactor,
+                    VoxelSize = Library.fVoxelSizeMM,
+                    Triangles = msh.nTriangleCount(),
+                    Vertices = msh.nVertexCount(),
+                    Timestamp = DateTime.Now.ToString("O")
+                };
                 
-                Console.WriteLine("Generation complete!");
-                Console.WriteLine($"STL: output.stl");
-                Console.WriteLine($"Metadata: output_meta.json");
+                string metaPath = Path.Combine(Library.strLogFolder, "test_design_meta.json");
+                File.WriteAllText(metaPath, System.Text.Json.JsonSerializer.Serialize(metadata, 
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+                
+                Library.Log("╔════════════════════════════════════════╗");
+                Library.Log("║     Generation Completed Successfully  ║");
+                Library.Log("╚════════════════════════════════════════╝");
+                
+                // Add to viewer if not headless
+                if (!Library.bHeadlessMode)
+                {
+                    Library.oViewer().Add(voxFinal);
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
-                Console.WriteLine(ex.StackTrace);
-                Environment.Exit(1);
+                Library.Log($"ERROR: {ex.Message}");
+                Library.Log(ex.StackTrace);
+                if (!Library.bHeadlessMode)
+                {
+                    Library.oViewer().SetBackgroundColor(Cp.clrWarning);
+                }
+                throw;
             }
         }
     }
-
-    
-public class CustomDevice
-{
-    public Voxels Generate()
-    {
-        // Custom device generation
-        Voxels voxResult = new Voxels();
-        
-        // Add your custom geometry here
-        
-        return voxResult;
-    }
-    
-    public string GetMetadata()
-    {
-        return "{}";
-    }
-}
-
 }

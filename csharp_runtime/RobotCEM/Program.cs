@@ -1,5 +1,5 @@
-﻿using Leap71.ShapeKernel;
-using PicoGK;
+﻿using PicoGK;
+using RobotCEM.Generated;
 using System;
 
 namespace RobotCEM
@@ -10,27 +10,36 @@ namespace RobotCEM
         {
             try
             {
-                // Output folder for generated files
-                string strOutputFolder = Environment.GetEnvironmentVariable("ROBOTCEM_OUTPUT") ?? "./outputs";
+                // Check for headless mode
+                bool headless = args.Length > 0 && args[0] == "--headless";
                 
-                // Ensure output directory exists
-                if (!Directory.Exists(strOutputFolder))
+                // Initialize PicoGK
+                float voxelSize = 0.5f; // 0.5mm voxel size - adjust as needed
+                
+                if (headless)
                 {
-                    Directory.CreateDirectory(strOutputFolder);
+                    Console.WriteLine("Starting PicoGK in HEADLESS mode...");
+                    Library.Go(
+                        voxelSize,
+                        GeneratedDesign.Task,
+                        Library.RunMode.Headless
+                    );
+                }
+                else
+                {
+                    Console.WriteLine("Starting PicoGK with VIEWER...");
+                    Library.Go(
+                        voxelSize,
+                        GeneratedDesign.Task
+                    );
                 }
                 
-                Console.WriteLine($"RobotCEM Design Generation Started");
-                Console.WriteLine($"Output folder: {strOutputFolder}");
-                
-                // Run design generation in headless mode
-                Generated.GeneratedDesign.GenerateDesign(strOutputFolder);
-                
-                Console.WriteLine("RobotCEM Design Generation Completed Successfully");
+                Console.WriteLine("PicoGK execution completed successfully!");
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine("ERROR: RobotCEM Design Generation Failed");
-                Console.WriteLine(e.ToString());
+                Console.WriteLine($"FATAL ERROR: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
                 Environment.Exit(1);
             }
         }
