@@ -4,7 +4,7 @@ using System;
 
 namespace RobotCEM
 {
-    class Program
+    class Program 
     {
         static void Main(string[] args)
         {
