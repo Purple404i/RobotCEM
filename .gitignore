@@ -41,3 +41,4 @@ Thumbs.db
 # Environment files
 .env.local
 .env.*.local
+robotcem.db

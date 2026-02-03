@@ -1,0 +1,504 @@
+{
+  "version": "2.0",
+  "type": "real_geometry_training",
+  "extraction_source": "LEAP71 libraries + PicoGK examples",
+  "examples": [
+    {
+      "intent": "Create a rectangular housing 20mm long, 10mm wide, 15mm high",
+      "understood_as": "BaseBox with dimensions [20, 10, 15]",
+      "geometry_spec": {
+        "shape_type": "box",
+        "parameters": {
+          "length": 20,
+          "width": 10,
+          "height": 15
+        },
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "expected_properties": {
+        "volume": 3000,
+        "voxel_construct_available": true
+      }
+    },
+    {
+      "intent": "Design a spherical connector head with 40mm radius",
+      "understood_as": "BaseSphere with radius 40mm",
+      "geometry_spec": {
+        "shape_type": "sphere",
+        "parameters": {
+          "radius": 40
+        },
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "expected_properties": {
+        "radius": 40,
+        "surface_modulation_capable": true
+      }
+    },
+    {
+      "intent": "Create a lightweight infill structure inside a sphere, reduce weight by 30%",
+      "understood_as": "Lattice with BodyCentric pattern, cell size 20mm, noise 0.2",
+      "geometry_spec": {
+        "shape_type": "lattice",
+        "parameters": {
+          "bounding_radius": 50
+        },
+        "lattice_config": {
+          "lattice_type": "BodyCentric",
+          "cell_size": 20,
+          "noise_level": 0.2,
+          "min_beam_thickness": 1.0,
+          "max_beam_thickness": 4.0
+        }
+      },
+      "expected_properties": {
+        "weight_reduction": "20-30%",
+        "strength_maintained": true,
+        "voxel_based": true
+      }
+    },
+    {
+      "intent": "Create a strong, durable lattice structure for load-bearing",
+      "understood_as": "Octahedron lattice, larger beam radius 3-5mm",
+      "geometry_spec": {
+        "shape_type": "lattice",
+        "parameters": {
+          "bounding_radius": 50
+        },
+        "lattice_config": {
+          "lattice_type": "OctahedronLattice",
+          "cell_size": 20,
+          "min_beam_thickness": 2.0,
+          "max_beam_thickness": 5.0
+        }
+      },
+      "expected_properties": {
+        "high_strength": true,
+        "weight_reduction": "25-35%",
+        "best_for": "aerospace components"
+      }
+    },
+    {
+      "intent": "Create a lattice that adapts to surface boundaries, stronger at edges",
+      "understood_as": "Conformal cell array with boundary reinforcement",
+      "geometry_spec": {
+        "shape_type": "lattice",
+        "lattice_config": {
+          "cell_array": "ConformalCellArray",
+          "lattice_type": "BodyCentric",
+          "cell_size": 20,
+          "boundary_offset": 5
+        }
+      },
+      "expected_properties": {
+        "adaptive_geometry": true,
+        "boundary_reinforced": true,
+        "complex_shapes": true
+      }
+    },
+    {
+      "intent": "Create a tapered cylinder that gets narrower towards the top",
+      "understood_as": "BaseCylinder with LineModulation applied",
+      "geometry_spec": {
+        "shape_type": "cylinder",
+        "parameters": {
+          "radius": 20,
+          "height": 40
+        },
+        "modulation": {
+          "type": "LineModulation",
+          "function": "tapered"
+        }
+      },
+      "expected_properties": {
+        "varying_cross_section": true,
+        "optimized_stress_distribution": true
+      }
+    },
+    {
+      "intent": "Create a lattice structure suitable for FDM 3D printing",
+      "understood_as": "Lattice with minimum beam thickness 0.8mm (FDM extrusion width)",
+      "geometry_spec": {
+        "shape_type": "lattice",
+        "lattice_config": {
+          "lattice_type": "BodyCentric",
+          "min_beam_thickness": 0.8,
+          "max_beam_thickness": 4.0,
+          "manufacturing_process": "FDM"
+        }
+      },
+      "manufacturing_rules": {
+        "process": "FDM",
+        "min_wall_thickness": 0.8,
+        "tolerance": 0.3
+      }
+    },
+    {
+      "intent": "Create a strong aerospace component in aluminum with high precision",
+      "understood_as": "Octahedron lattice with tight tolerances",
+      "geometry_spec": {
+        "shape_type": "lattice",
+        "lattice_config": {
+          "lattice_type": "OctahedronLattice",
+          "precision": "high"
+        }
+      },
+      "material_constraints": {
+        "material": "Al6061",
+        "tensile_strength": 310,
+        "density": 2.7,
+        "cost": 8
+      }
+    }
+  ],
+  "geometry_knowledge": {
+    "base_shapes": {
+      "BaseBox": {
+        "description": "Rectangular box with optional parametric dimensions",
+        "parameters": {
+          "length": {
+            "type": "float",
+            "range": [
+              1,
+              1000
+            ],
+            "default": 20
+          },
+          "width": {
+            "type": "float",
+            "range": [
+              1,
+              1000
+            ],
+            "default": 10
+          },
+          "height": {
+            "type": "float",
+            "range": [
+              1,
+              1000
+            ],
+            "default": 15
+          }
+        },
+        "modulations": [
+          "LineModulation (1D)",
+          "SurfaceModulation (2D)"
+        ],
+        "operations": [
+          "voxConstruct",
+          "SetWidth",
+          "SetDepth"
+        ],
+        "use_cases": [
+          "Structural frames",
+          "Rectangular housings",
+          "Connector blocks"
+        ],
+        "example": {
+          "location": "Vector3(-50, 0, 0)",
+          "dimensions": [
+            20,
+            10,
+            15
+          ],
+          "color": "clrBlue"
+        }
+      },
+      "BaseSphere": {
+        "description": "Spherical geometry with optional radius modulation",
+        "parameters": {
+          "radius": {
+            "type": "float",
+            "range": [
+              1,
+              500
+            ],
+            "default": 40
+          }
+        },
+        "modulations": [
+          "SurfaceModulation (theta, phi dependent)"
+        ],
+        "operations": [
+          "voxConstruct",
+          "SetRadius"
+        ],
+        "use_cases": [
+          "Ball joints",
+          "Connector heads",
+          "Rounded features"
+        ],
+        "example": {
+          "location": "Vector3(-100, 0, 0)",
+          "radius": 40,
+          "color": "clrFrozen"
+        }
+      },
+      "BaseCylinder": {
+        "description": "Cylindrical geometry, good for axes and pins",
+        "parameters": {
+          "radius": {
+            "type": "float",
+            "range": [
+              0.5,
+              200
+            ],
+            "default": 20
+          },
+          "height": {
+            "type": "float",
+            "range": [
+              1,
+              500
+            ],
+            "default": 40
+          }
+        },
+        "modulations": [
+          "LineModulation",
+          "SurfaceModulation"
+        ],
+        "operations": [
+          "voxConstruct",
+          "SetRadius",
+          "SetHeight"
+        ],
+        "use_cases": [
+          "Axes and pins",
+          "Cylindrical housings",
+          "Joint connections"
+        ]
+      },
+      "BasePipe": {
+        "description": "Hollow cylindrical structure",
+        "parameters": {
+          "outer_radius": {
+            "type": "float",
+            "range": [
+              2,
+              200
+            ],
+            "default": 20
+          },
+          "inner_radius": {
+            "type": "float",
+            "range": [
+              0.5,
+              199
+            ],
+            "default": 15
+          },
+          "height": {
+            "type": "float",
+            "range": [
+              1,
+              500
+            ],
+            "default": 40
+          }
+        },
+        "use_cases": [
+          "Tubes and conduits",
+          "Hollow structural members",
+          "Fluid channels"
+        ]
+      },
+      "BaseLens": {
+        "description": "Optical component with curved surfaces",
+        "parameters": {
+          "radius": {
+            "type": "float",
+            "range": [
+              5,
+              200
+            ],
+            "default": 30
+          }
+        },
+        "use_cases": [
+          "Optical components",
+          "Curved connectors",
+          "Light redirection"
+        ]
+      },
+      "BaseRing": {
+        "description": "Toroidal geometry",
+        "parameters": {
+          "major_radius": {
+            "type": "float",
+            "range": [
+              5,
+              200
+            ],
+            "default": 30
+          },
+          "minor_radius": {
+            "type": "float",
+            "range": [
+              1,
+              50
+            ],
+            "default": 10
+          }
+        },
+        "use_cases": [
+          "Ring connectors",
+          "Toroidal structures",
+          "Circular guides"
+        ]
+      }
+    },
+    "lattice_patterns": {
+      "regular_cubic": {
+        "cell_array": "RegularCellArray",
+        "lattice_type": "BodyCentreLattice",
+        "beam_thickness": "CellBasedBeamThickness",
+        "parameters": {
+          "cell_size_x": {
+            "type": "float",
+            "default": 20
+          },
+          "cell_size_y": {
+            "type": "float",
+            "default": 20
+          },
+          "cell_size_z": {
+            "type": "float",
+            "default": 20
+          },
+          "noise_level": {
+            "type": "float",
+            "range": [
+              0,
+              1
+            ],
+            "default": 0.2
+          },
+          "min_beam_thickness": {
+            "type": "float",
+            "default": 1.0
+          },
+          "max_beam_thickness": {
+            "type": "float",
+            "default": 4.0
+          }
+        },
+        "weight_reduction": "20-30%",
+        "properties": "Strength balanced with weight reduction",
+        "use_cases": [
+          "Infill structures",
+          "Weight optimization",
+          "Structural support"
+        ]
+      },
+      "octahedron": {
+        "cell_array": "RegularCellArray",
+        "lattice_type": "OctahedronLattice",
+        "beam_thickness": "CellBasedBeamThickness",
+        "parameters": {
+          "cell_size": {
+            "type": "float",
+            "range": [
+              10,
+              100
+            ],
+            "default": 20
+          },
+          "min_beam_radius": {
+            "type": "float",
+            "default": 1.0
+          },
+          "max_beam_radius": {
+            "type": "float",
+            "default": 4.0
+          }
+        },
+        "weight_reduction": "25-35%",
+        "properties": "High strength-to-weight ratio",
+        "use_cases": [
+          "Aerospace components",
+          "Load-bearing structures",
+          "High-performance infill"
+        ]
+      },
+      "conformal": {
+        "cell_array": "ConformalCellArray",
+        "lattice_type": "BodyCentreLattice|OctahedronLattice",
+        "beam_thickness": "BoundaryBeamThickness",
+        "parameters": {
+          "cell_size": {
+            "type": "float",
+            "default": 20
+          },
+          "boundary_offset": {
+            "type": "float",
+            "default": 5
+          },
+          "inner_beam_radius": {
+            "type": "float",
+            "default": 1.0
+          },
+          "outer_beam_radius": {
+            "type": "float",
+            "default": 4.0
+          }
+        },
+        "properties": "Adapts to surface geometry, stronger at boundaries",
+        "use_cases": [
+          "Complex curved shapes",
+          "Variable density optimization",
+          "Boundary-reinforced structures"
+        ]
+      }
+    },
+    "design_patterns": [
+      {
+        "name": "Basic Shape Generation",
+        "steps": [
+          "Define LocalFrame (position, orientation)",
+          "Create BaseShape with frame and parameters",
+          "Call voxConstruct() to generate voxels",
+          "Apply modulations if needed",
+          "Preview or export"
+        ],
+        "code_pattern": "LocalFrame \u2192 BaseShape \u2192 voxConstruct() \u2192 Voxels",
+        "applicable_to": [
+          "all BaseShapes"
+        ]
+      },
+      {
+        "name": "Lattice Generation Pipeline",
+        "steps": [
+          "Step 1: Define bounding object (e.g., BaseSphere)",
+          "Step 2: Create ICellArray (RegularCellArray or ConformalCellArray)",
+          "Step 3: Select ILatticeType (BodyCentric, Octahedron, RandomSpline)",
+          "Step 4: Configure IBeamThickness distribution",
+          "Step 5: Call voxGetFinalLatticeGeometry()",
+          "Step 6: Post-process (Fillet, Boolean operations)",
+          "Step 7: Visualize or export"
+        ],
+        "manufacturing_constraint": "Minimum feature size > beam thickness",
+        "optimization_goal": "Weight reduction while maintaining strength"
+      },
+      {
+        "name": "Modulation-Based Design",
+        "description": "Vary dimensions along 1D (LineModulation) or 2D (SurfaceModulation) paths",
+        "applications": [
+          "Tapered sections",
+          "Variable cross-sections",
+          "Optimized stress distribution"
+        ]
+      }
+    ],
+    "manufacturing_rules": {}
+  }
+}

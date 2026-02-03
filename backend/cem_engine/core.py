@@ -1,13 +1,36 @@
 import asyncio
 import json
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict
 import numpy as np
-from transformers import pipeline
 import logging
+from enum import Enum
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+class BaseShapeType(Enum):
+    """ShapeKernel BaseShape types for PicoGK generation"""
+    BOX = "box"
+    SPHERE = "sphere"
+    CYLINDER = "cylinder"
+    PIPE = "pipe"
+    LENS = "lens"
+    RING = "ring"
+
+@dataclass
+class PartSpecification:
+    """Represents a component part with properties for market search"""
+    name: str
+    category: str
+    material: str
+    dimensions: Dict[str, float]
+    weight: float
+    price: float
+    supplier: str
+    availability: str
+    lead_time_days: int
+    specifications: Dict[str, Any]
 
 @dataclass
 class DesignSpecification:
@@ -22,6 +45,8 @@ class DesignSpecification:
     safety_factor: float
     tolerance: float
     finish_requirements: str
+    base_shape: Optional[Dict[str, Any]] = None
+    lightweighting: Optional[Dict[str, Any]] = None
     
     def to_dict(self):
         return asdict(self)
@@ -33,14 +58,71 @@ class ValidationResult:
     warnings: List[str]
     suggested_fixes: List[str]
 
+@dataclass
+class PhysicsResult:
+    """Physics validation results from PicoGK simulation"""
+    stress_distribution: np.ndarray
+    strain_distribution: np.ndarray
+    max_stress: float
+    max_strain: float
+    factor_of_safety: float
+    deformation: float
+    is_safe: bool
+
+class ShapeKernelAnalyzer:
+    """Analyzes design using PicoGK/ShapeKernel physics principles"""
+    
+    def __init__(self):
+        self.base_shapes = {
+            "box": {"parameters": ["length", "width", "height"]},
+            "sphere": {"parameters": ["radius"]},
+            "cylinder": {"parameters": ["radius", "height"]},
+            "pipe": {"parameters": ["outer_radius", "inner_radius", "height"]},
+            "lens": {"parameters": ["radius", "thickness"]},
+            "ring": {"parameters": ["outer_radius", "inner_radius", "thickness"]}
+        }
+    
+    def recommend_base_shape(self, device_type: str, dimensions: Dict[str, float]) -> Dict[str, Any]:
+        """Recommend optimal BaseShape based on device type"""
+        recommendations = {
+            "bearing": {"shape": "ring", "dimensions": {"outer_radius": dimensions.get("diameter", 10) / 2, 
+                                                         "inner_radius": dimensions.get("bore", 5) / 2}},
+            "connector": {"shape": "cylinder", "dimensions": {"radius": dimensions.get("diameter", 5) / 2,
+                                                              "height": dimensions.get("length", 20)}},
+            "housing": {"shape": "box", "dimensions": dimensions},
+            "manifold": {"shape": "pipe", "dimensions": {"outer_radius": dimensions.get("outer_diameter", 20) / 2,
+                                                         "inner_radius": dimensions.get("inner_diameter", 10) / 2,
+                                                         "height": dimensions.get("length", 50)}},
+            "lens": {"shape": "lens", "dimensions": dimensions},
+            "sphere_component": {"shape": "sphere", "dimensions": {"radius": dimensions.get("diameter", 20) / 2}}
+        }
+        
+        return recommendations.get(device_type.lower(), {"shape": "box", "dimensions": dimensions})
+    
+    def calculate_lattice_parameters(self, volume_reduction_target: float = 0.3, 
+                                    load_case: Dict[str, float] = None) -> Dict[str, Any]:
+        """Calculate optimal lattice parameters for weight reduction"""
+        return {
+            "enabled": True,
+            "cell_type": "regular",
+            "cell_size": 20,
+            "beam_thickness": max(1.5, 5.0 * (1 - volume_reduction_target)),
+            "noise_level": 0.1 if load_case else 0.0,
+            "conformal": True
+        }
+
 class CEMEngine:
     def __init__(self, anthropic_api_key: Optional[str] = None, config: dict = None):
-        # Initialize HuggingFace model (no API key needed for local models)
-        self.nlp_pipeline = pipeline("text-generation", model="gpt2")
+        # Use LLM engine for natural language processing
+        from .llm_engine import get_llm_engine
+        self.llm_engine = get_llm_engine()
+        logger.info("Initialized CEMEngine with LLM engine for NLP")
+        
         self.config = config or {}
         self.design_rules = self._load_design_rules()
         self.material_database = self._load_material_database()
         self.physics_models = self._load_physics_models()
+        self.shape_analyzer = ShapeKernelAnalyzer()
         
     def _load_design_rules(self) -> Dict:
         """Load manufacturing and design constraints"""
@@ -166,105 +248,42 @@ class CEMEngine:
         }
     
     async def parse_prompt(self, user_prompt: str) -> DesignSpecification:
-        """Parse natural language into structured engineering specification"""
+        """Parse natural language into structured engineering specification using LLM engine"""
         
-        system_prompt = """You are an expert engineering specification extractor.
-        
-        Extract the following from the user's prompt and return ONLY valid JSON:
-        
-        {
-          "device_type": "robot_arm|gripper|drone|mechanism|custom",
-          "dimensions": {
-            "length": <mm>,
-            "width": <mm>,
-            "height": <mm>,
-            "reach": <mm>,  // for arms
-            "stroke": <mm>  // for linear actuators
-          },
-          "loads": {
-            "payload": <kg>,
-            "max_force": <N>,
-            "torque": <N·m>
-          },
-          "motion_constraints": {
-            "dof": <number>,  // degrees of freedom
-            "joint_limits": [<deg>, <deg>],
-            "speed": <mm/s or deg/s>,
-            "acceleration": <mm/s² or deg/s²>,
-            "repeatability": <mm>
-          },
-          "material_preferences": ["PLA", "ABS", "Aluminum", etc.],
-          "manufacturing_method": "FDM|SLA|SLS|CNC|hybrid",
-          "components": [
-            {
-              "type": "servo|stepper|bearing|sensor",
-              "mpn": "part_number",
-              "quantity": <int>,
-              "specifications": {}
-            }
-          ],
-          "environmental_conditions": {
-            "temp_min": <°C>,
-            "temp_max": <°C>,
-            "humidity": <%>,
-            "outdoor": <bool>
-          },
-          "safety_factor": <float>,  // default 2.0
-          "tolerance": <mm>,  // default 0.1
-          "finish_requirements": "as_printed|sanded|painted|anodized"
-        }
-        
-        If information is missing, make engineering assumptions and note them.
-        Return ONLY the JSON object, no markdown, no explanations."""
-        
-        logger.info(f"Parsing prompt start: {user_prompt[:200]!r}")
-
-        prompt_text = f"{system_prompt}\n\nUser prompt:\n{user_prompt}"
+        logger.info(f"Parsing prompt with LLM engine: {user_prompt[:200]!r}")
 
         try:
-            # Limit time spent calling heavy local models so UI stays responsive
-            response = await asyncio.wait_for(
-                asyncio.to_thread(
-                    self.nlp_pipeline,
-                    prompt_text,
-                    max_length=2000,
-                    do_sample=False
-                ),
-                timeout=15.0
-            )
-            logger.info("Parsing prompt completed; processing output")
-        except asyncio.TimeoutError:
-            logger.warning("NLP pipeline timeout - falling back to simple parser")
+            # Use LLM engine for parsing
+            session_id = f"parse_{int(asyncio.get_event_loop().time())}"
+            
+            # Create a minimal parser for LLM engine to work with
+            from .prompt_parser import PromptParser
+            parser = PromptParser()
+            
+            # Process prompt through LLM engine
+            llm_result = await self.llm_engine.process_prompt(session_id, user_prompt, parser)
+            
+            spec_dict = llm_result
+            
+            logger.info("LLM parsing completed; processing output")
+            
+        except Exception as e:
+            logger.warning(f"LLM parsing failed: {e} - falling back to simple parser")
             return self._simple_parse(user_prompt)
-        except Exception:
-            logger.exception("NLP pipeline failed during parse_prompt - falling back to simple parser")
-            return self._simple_parse(user_prompt)
         
-        # Extract JSON from response
-        content = response[0].get('generated_text', '').strip()
-        logger.info(f"NLP raw output (truncated): {content[:400]!r}")
-        
-        # Remove markdown code blocks if present
-        if content.startswith("```json"):
-            content = content.split("```json")[1].split("```")[0].strip()
-        elif content.startswith("```"):
-            content = content.split("```")[1].split("```")[0].strip()
-        
-        spec_dict = json.loads(content)
-        
-        # Create specification object
+        # Create specification object from LLM result
         spec = DesignSpecification(
             device_type=spec_dict.get("device_type", "custom"),
             dimensions=spec_dict.get("dimensions", {}),
             loads=spec_dict.get("loads", {}),
-            motion_constraints=spec_dict.get("motion_constraints", {}),
-            material_preferences=spec_dict.get("material_preferences", ["PLA"]),
-            manufacturing_method=spec_dict.get("manufacturing_method", "FDM"),
+            motion_constraints=spec_dict.get("motion", {}),
+            material_preferences=spec_dict.get("materials", ["PLA"]),
+            manufacturing_method=spec_dict.get("manufacturing", "FDM"),
             components=spec_dict.get("components", []),
-            environmental_conditions=spec_dict.get("environmental_conditions", {}),
-            safety_factor=spec_dict.get("safety_factor", 2.0),
-            tolerance=spec_dict.get("tolerance", 0.1),
-            finish_requirements=spec_dict.get("finish_requirements", "as_printed")
+            environmental_conditions=spec_dict.get("environment", {}),
+            safety_factor=spec_dict.get("requirements", {}).get("safety_factor", 2.0),
+            tolerance=spec_dict.get("requirements", {}).get("tolerance_mm", 0.1),
+            finish_requirements=spec_dict.get("requirements", {}).get("finish", "as_printed")
         )
         
         logger.info(f"Extracted specification: {spec.device_type}")

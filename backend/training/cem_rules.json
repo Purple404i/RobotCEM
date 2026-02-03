@@ -1,0 +1,128 @@
+{
+  "design_rules": {
+    "gripper": [
+      "Apply 2x minimum safety factor on payload",
+      "Jaw width range: 20-150mm",
+      "Parallel jaw stroke: 10-100mm",
+      "Material: Al6061 frames, stainless jaws",
+      "Grip force range: 50-500N"
+    ],
+    "arm": [
+      "Reach: 500-2500mm typical",
+      "Payload inversely proportional to reach",
+      "6-DOF standard configuration",
+      "Carbon fiber for links, aluminum for joints",
+      "3x safety factor for load capacity"
+    ],
+    "bearing": [
+      "Dynamic load rating 2x minimum",
+      "Ball bearing for low friction",
+      "Roller bearing for heavy loads",
+      "Bore range: 5-50mm for robotics",
+      "Stainless steel for corrosive environments"
+    ]
+  },
+  "manufacturing_rules": {
+    "FDM": {
+      "min_wall_thickness": 0.8,
+      "min_feature": 1.0,
+      "tolerance": 0.3,
+      "material": [
+        "PLA",
+        "ABS",
+        "PETG",
+        "Nylon"
+      ],
+      "cost_per_kg": 5.0,
+      "print_speed": "50-150 mm/s",
+      "support_angle": 45.0
+    },
+    "SLA": {
+      "min_wall_thickness": 0.4,
+      "min_feature": 0.5,
+      "tolerance": 0.1,
+      "material": [
+        "Standard",
+        "Tough",
+        "Flexible"
+      ],
+      "cost_per_ml": 0.05,
+      "print_speed": "25 mm/h",
+      "escape_holes": true
+    },
+    "SLS": {
+      "min_wall_thickness": 0.7,
+      "min_feature": 0.5,
+      "tolerance": 0.15,
+      "material": [
+        "Nylon 12",
+        "Nylon Glass",
+        "TPU"
+      ],
+      "cost_per_kg": 20.0,
+      "print_speed": "10 mm/h",
+      "support_angle": 90.0
+    },
+    "CNC": {
+      "min_wall_thickness": 0.5,
+      "min_feature": 0.1,
+      "tolerance": 0.05,
+      "material": [
+        "Al6061",
+        "Steel",
+        "Brass",
+        "Titanium"
+      ],
+      "cost_per_hour": 50.0,
+      "coolant": "Required",
+      "tool_changes": "Multiple"
+    }
+  },
+  "material_database": {
+    "PLA": {
+      "category": "thermoplastic",
+      "process": "FDM",
+      "cost_per_kg": 5.0,
+      "density_g_cm3": 1.24,
+      "tensile_strength_mpa": 50,
+      "print_temp": 200,
+      "environmental": "Biodegradable"
+    },
+    "ABS": {
+      "category": "thermoplastic",
+      "process": "FDM",
+      "cost_per_kg": 8.0,
+      "density_g_cm3": 1.05,
+      "tensile_strength_mpa": 40,
+      "print_temp": 240,
+      "environmental": "Impact resistant"
+    },
+    "PETG": {
+      "category": "thermoplastic",
+      "process": "FDM",
+      "cost_per_kg": 10.0,
+      "density_g_cm3": 1.27,
+      "tensile_strength_mpa": 55,
+      "print_temp": 235,
+      "environmental": "Balanced properties"
+    },
+    "Al6061": {
+      "category": "aluminum",
+      "process": "CNC",
+      "cost_per_kg": 3.0,
+      "density_g_cm3": 2.7,
+      "tensile_strength_mpa": 310,
+      "machinability": "Good",
+      "environmental": "Recyclable"
+    },
+    "Steel": {
+      "category": "metal",
+      "process": "CNC",
+      "cost_per_kg": 2.0,
+      "density_g_cm3": 7.85,
+      "tensile_strength_mpa": 400,
+      "machinability": "Moderate",
+      "environmental": "Recyclable"
+    }
+  }
+}

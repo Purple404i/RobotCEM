@@ -1,33 +1,118 @@
 import json
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple, Any
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-# Optional Hugging Face parser support
+# Use LLM engine instead of Hugging Face
 try:
-  from .transformer_interface import HFPromptParser
-except Exception:
-  HFPromptParser = None
+  from .llm_engine import get_llm_engine
+  from ..training.llm_trainer import LLMDomainAdapter
+except Exception as e:
+  logger.warning(f"LLM engine not available: {e}")
+  get_llm_engine = None
+  LLMDomainAdapter = None
+
+
+class NaturalLanguageAnalyzer:
+    """Analyze natural language prompts for engineering intent and constraints"""
+    
+    def extract_intent(self, prompt: str) -> Dict[str, Any]:
+        """Extract primary engineering intent from prompt"""
+        prompt_lower = prompt.lower()
+        
+        # Device type detection
+        device_patterns = {
+            "robot_arm": ["arm", "manipulator", "robotic arm", "6-dof", "articulated"],
+            "gripper": ["gripper", "claw", "hand", "grasp", "clamp"],
+            "actuator": ["actuator", "motor", "drive", "linear", "rotary"],
+            "printer": ["3d printer", "additive", "fdm", "sla", "powder"],
+            "assembly": ["assembly", "workstation", "cell", "line"],
+            "mechanism": ["mechanism", "gear", "linkage", "joint", "bearing"],
+            "enclosure": ["enclosure", "case", "housing", "box", "container"],
+            "bracket": ["bracket", "mount", "support", "fixture", "holder"],
+            "lattice": ["lattice", "infill", "porous", "cellular", "honeycomb"],
+        }
+        
+        detected_type = "custom"
+        for device_type, keywords in device_patterns.items():
+            if any(keyword in prompt_lower for keyword in keywords):
+                detected_type = device_type
+                break
+        
+        # Goal detection
+        goal_patterns = {
+            "lightweight": ["light", "weight reduction", "minimal weight", "featherweight"],
+            "cost_effective": ["cheap", "affordable", "budget", "economical", "cost"],
+            "durable": ["strong", "robust", "durable", "heavy duty", "rugged"],
+            "high_precision": ["precise", "accuracy", "tolerance", "exact"],
+            "rapid_prototyping": ["quick", "fast", "rapid", "prototype", "iterate"],
+        }
+        
+        optimization_goals = []
+        for goal, keywords in goal_patterns.items():
+            if any(keyword in prompt_lower for keyword in keywords):
+                optimization_goals.append(goal)
+        
+        return {
+            "detected_device_type": detected_type,
+            "optimization_goals": optimization_goals or ["balanced"],
+            "prompt_length": len(prompt),
+            "specificity": self._calculate_specificity(prompt),
+        }
+    
+    def _calculate_specificity(self, prompt: str) -> float:
+        """Calculate how specific the prompt is (0-1)"""
+        keywords = len(prompt.split())
+        has_numbers = bool(re.search(r'\d+', prompt))
+        has_units = bool(re.search(r'(mm|cm|kg|n|degrees?|rpm|watts?|volts?)', prompt.lower()))
+        has_constraints = any(word in prompt.lower() for word in 
+                            ["budget", "cost", "max", "minimum", "at least", "no more than"])
+        
+        specificity = (keywords / 50) * 0.25  # Longer prompts = more specific (0.25 max)
+        specificity += 0.25 if has_numbers else 0
+        specificity += 0.25 if has_units else 0
+        specificity += 0.25 if has_constraints else 0
+        
+        return min(1.0, specificity)
+
 
 class PromptParser:
-    """Parse natural language into structured specifications using a Hugging Face model"""
+    """Parse natural language into structured specifications using LLM engine"""
     
     def __init__(self, hf_model_name: Optional[str] = None):
-      """Initialize parser. Prefer a Hugging Face model when `hf_model_name` is provided.
-
-      Local HF models or remote providers should be used.
-      """
+      """Initialize parser with LLM engine for advanced natural language processing."""
       self.component_database = self._load_component_db()
-
-      self.hf_parser = None
-      if hf_model_name and HFPromptParser is not None:
-        try:
-          self.hf_parser = HFPromptParser(model_name=hf_model_name)
-          logger.info(f"Initialized HFPromptParser with {hf_model_name}")
-        except Exception as e:
-          logger.warning(f"Failed to initialize HF parser: {e}")
+      self.nl_analyzer = NaturalLanguageAnalyzer()
+      
+      # Initialize LLM engine for advanced parsing
+      try:
+        self.llm_engine = get_llm_engine()
+        logger.info("Initialized LLM engine for prompt parsing")
+      except Exception as e:
+        logger.warning(f"Failed to initialize LLM engine: {e}")
+        self.llm_engine = None
+      
+      # Initialize domain adapter for training-enhanced responses
+      try:
+        if LLMDomainAdapter:
+          self.domain_adapter = LLMDomainAdapter()
+          num_items = self.domain_adapter.load_training_data()
+          if num_items > 0:
+            logger.info(f"✓ Domain adapter loaded with {num_items} training items")
+          else:
+            logger.warning("Domain adapter initialized but no training data found")
+        else:
+          self.domain_adapter = None
+      except Exception as e:
+        logger.warning(f"Failed to initialize domain adapter: {e}")
+        self.domain_adapter = None
+      
+      # hf_model_name is deprecated but kept for backwards compatibility
+      if hf_model_name:
+        logger.info(f"Note: hf_model_name parameter deprecated. Using LLM engine and training instead.")
     
     def _load_component_db(self) -> Dict:
         """Common robotics components database"""
@@ -88,84 +173,65 @@ class PromptParser:
         }
     
     async def parse(self, prompt: str) -> Dict:
-        """Parse prompt into structured specification"""
+        """Parse prompt into structured specification using LLM engine with training"""
         
-        system_prompt = """You are an expert robotics engineer who extracts precise specifications from natural language.
-
-Extract and return ONLY a JSON object with this EXACT structure:
-
-{
-  "device_type": "robot_arm|gripper|linear_actuator|pan_tilt|custom",
-  "dimensions": {
-    "length_mm": ,
-    "width_mm": ,
-    "height_mm": ,
-    "reach_mm": ,
-    "stroke_mm": 
-  },
-  "loads": {
-    "payload_kg": ,
-    "max_force_n": ,
-    "torque_nm": 
-  },
-  "motion": {
-    "dof": ,
-    "joint_limits_deg": [[min, max], ...],
-    "max_speed": <mm/s or deg/s>,
-    "acceleration": <mm/s² or deg/s²>,
-    "repeatability_mm": 
-  },
-  "materials": ["PLA", "ABS", "PETG", "Nylon", "Aluminum_6061", "Steel", etc.],
-  "manufacturing": "FDM|SLA|SLS|CNC|hybrid",
-  "components": [
-    {
-      "type": "servo|stepper|bearing|sensor|controller",
-      "name": "component name",
-      "mpn": "manufacturer part number",
-      "quantity": ,
-      "specifications": {}
-    }
-  ],
-  "environment": {
-    "temp_min_c": ,
-    "temp_max_c": ,
-    "humidity_max_percent": ,
-    "outdoor": 
-  },
-  "requirements": {
-    "safety_factor": ,
-    "tolerance_mm": ,
-    "finish": "as_printed|sanded|painted|anodized",
-    "infill_percent": <10-100>,
-    "use_lattice": 
-  }
-}
-
-RULES:
-- Extract numbers with units and convert to standard units (mm, kg, N, etc.)
-- Identify component MPNs from common robotics parts (MG996R, NEMA17, etc.)
-- If information is missing, use engineering defaults
-- For robot arms: estimate reach, DOF, joint limits
-- For grippers: estimate jaw width, grip force
-- RETURN ONLY THE JSON - NO MARKDOWN, NO EXPLANATIONS"""
-
-        # Require a local HF parser (Anthropic removed)
-        if self.hf_parser:
-          logger.info("Parsing prompt with Hugging Face model...")
-          spec = self.hf_parser.parse(prompt)
-          return spec
-
-        raise RuntimeError("No Hugging Face model configured for PromptParser. Pass `hf_model_name`.")
+        # Extract intent and analyze prompt
+        intent_analysis = self.nl_analyzer.extract_intent(prompt)
         
-        # Remove markdown code blocks if present
-        content = re.sub(r'^```(?:json)?\s*', '', content)
-        content = re.sub(r'\s*```$', '', content)
-        content = content.strip()
+        # Use domain adapter to enhance prompt with training data
+        enhanced_prompt = prompt
+        if self.domain_adapter:
+          try:
+            enhanced_prompt = self.domain_adapter.enhance_prompt_with_context(
+                prompt, 
+                intent=intent_analysis.get("optimization_goals", ["balanced"])[0]
+            )
+            logger.info("✓ Prompt enhanced with domain training data")
+          except Exception as e:
+            logger.debug(f"Domain adapter enhancement failed: {e}, using original prompt")
         
-        try:
-            spec = json.loads(content)
-            logger.info(f"Parsed specification: {spec['device_type']}")
-            return spec
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON: {e}\nContent: {content}")
-            raise ValueError(f"Invalid JSON response from LLM: {str(e)}")
+        # Use LLM engine for advanced parsing
+        if self.llm_engine:
+          logger.info("Parsing prompt with LLM engine (domain-adapted)...")
+          
+          # Start conversation session for context
+          session_id = f"parse_{intent_analysis['detected_device_type']}_{int(datetime.utcnow().timestamp())}"
+          context, _ = self.llm_engine.start_conversation(session_id, enhanced_prompt)
+          
+          # Process prompt through LLM engine
+          llm_result = await self.llm_engine.process_prompt(session_id, enhanced_prompt, self)
+          
+          spec = {
+              "device_type": llm_result.get("device_type", intent_analysis["detected_device_type"]),
+              "dimensions": llm_result.get("dimensions", {}),
+              "loads": llm_result.get("loads", {}),
+              "motion": llm_result.get("motion", {}),
+              "materials": llm_result.get("materials", ["PLA"]),
+              "manufacturing": llm_result.get("manufacturing", "FDM"),
+              "components": llm_result.get("components", []),
+              "environment": llm_result.get("environment", {}),
+              "requirements": llm_result.get("requirements", {}),
+          }
+          
+          confidence = llm_result.get("confidence_score", intent_analysis["specificity"])
+        else:
+          raise RuntimeError("LLM engine not initialized. Cannot parse prompts.")
+        
+        # Enrich specification with intent analysis and training context
+        spec["_intent_analysis"] = intent_analysis
+        spec["_parsed_at"] = datetime.utcnow().isoformat()
+        spec["_specificity_score"] = confidence
+        spec["_domain_adapted"] = self.domain_adapter is not None
+        
+        logger.info(f"Parsed specification: {spec.get('device_type', 'custom')} with confidence: {confidence:.2%}")
+        if self.domain_adapter:
+            logger.info(f"Domain adaptation: enabled with {len(self.domain_adapter.knowledge_base)} knowledge categories")
+        return spec
+        
+        # Enrich specification with intent analysis
+        spec["_intent_analysis"] = intent_analysis
+        spec["_parsed_at"] = datetime.utcnow().isoformat()
+        spec["_specificity_score"] = confidence
+        
+        logger.info(f"Parsed specification: {spec.get('device_type', 'custom')} with confidence: {confidence:.2%}")
+        return spec
