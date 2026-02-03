@@ -10,12 +10,13 @@ import logging
 from pathlib import Path
 import uuid
 
-from cem_engine.core import CEMEngine, DesignSpecification
-from cem_engine.llm_engine import get_llm_engine
-from cem_engine.code_generator import CSharpCodeGenerator
-from picogk_bridge.executor import PicoGKExecutor
-from intelligence.material_pricing import MaterialPricingEngine
-from tools.routes import router as tools_router
+from ..cem_engine.core import CEMEngine, DesignSpecification
+from ..cem_engine.llm_engine import get_llm_engine
+from ..cem_engine.code_generator import CSharpCodeGenerator
+from ..picogk_bridge.executor import PicoGKExecutor
+from ..intelligence.material_pricing import MaterialPricingEngine
+from ..tools.routes import router as tools_router
+from ..config import CONFIG
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -34,14 +35,7 @@ app.add_middleware(
 # Include Tool Server routes
 app.include_router(tools_router)
 
-# Initialize engines
-CONFIG = {
-    "octopart_api_key": "your-key-here",
-    "csharp_project_path": "../csharp_runtime/RobotCEM",
-    "output_dir": "./outputs",
-    "template_dir": "../csharp_runtime/RobotCEM/Templates"
-}
-
+# Initialize engines with config from config.py
 # Use LLM engine instead of HuggingFace models
 llm_engine = get_llm_engine()
 logger.info("✓ LLM engine initialized")

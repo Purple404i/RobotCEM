@@ -12,7 +12,6 @@ from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, asdict
 from enum import Enum
 import re
-from .prompt_parser import PromptParser
 
 logger = logging.getLogger(__name__)
 

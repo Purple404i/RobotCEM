@@ -21,11 +21,12 @@ from .price_tools import (
 )
 from .tool_registry import get_tool_registry
 from .database_cache import get_cache_store
+from ..config import CONFIG
 
 logger = logging.getLogger(__name__)
 
-# Initialize tools and cache
-cache_store = get_cache_store()
+# Initialize tools and cache with CONFIG database URL
+cache_store = get_cache_store(database_url=CONFIG.get("database_url", "sqlite:///./tool_cache.db"))
 registry = get_tool_registry()
 
 product_price_tool = ProductPriceTool(cache_store)

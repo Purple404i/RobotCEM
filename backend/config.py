@@ -4,16 +4,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-BASE_DIR = Path(__file__).parent
+BASE_DIR = Path(__file__).parent.parent  # Points to /home/devlord/RobotCEM
 
 CONFIG = {
 	# Core Infrastructure
-	"csharp_project_path": os.getenv("CSHARP_PROJECT_PATH", "../csharp_runtime/RobotCEM"),
-	"output_dir": os.getenv("OUTPUT_DIR", str(BASE_DIR / "outputs")),
-	"template_dir": os.getenv("TEMPLATE_DIR", "../csharp_runtime/RobotCEM/Templates"),
+	"csharp_project_path": os.getenv("CSHARP_PROJECT_PATH", str(BASE_DIR / "csharp_runtime" / "RobotCEM")),
+	"output_dir": os.getenv("OUTPUT_DIR", str(BASE_DIR / "backend" / "outputs")),
+	"template_dir": os.getenv("TEMPLATE_DIR", str(BASE_DIR / "csharp_runtime" / "RobotCEM" / "Templates")),
 	
 	# Database & Caching (Tool System)
-	"database_url": os.getenv("DATABASE_URL", "sqlite:///./robotcem.db"),
+	"database_url": os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'robotcem.db'}"),
 	"redis_url": os.getenv("REDIS_URL", "redis://localhost:6379"),
 	"enable_redis_cache": os.getenv("ENABLE_REDIS_CACHE", "false").lower() == "true",
 	

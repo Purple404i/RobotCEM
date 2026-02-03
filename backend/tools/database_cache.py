@@ -268,9 +268,12 @@ class RedisCacheStore(CacheStoreBackend):
             import redis
             self.redis = redis.from_url(redis_url)
             self.redis.ping()
-            logger.info("✓ Redis cache initialized")
+            logger.info("✓ Redis cache initialized successfully")
+        except ImportError:
+            logger.warning("Redis library not installed. Using SQLAlchemy cache only.")
+            self.redis = None
         except Exception as e:
-            logger.error(f"Redis initialization failed: {e}")
+            logger.debug(f"Redis unavailable ({e}). Using SQLAlchemy cache fallback.")
             self.redis = None
     
     async def get(self, key: str) -> Optional[Dict]:
@@ -284,7 +287,7 @@ class RedisCacheStore(CacheStoreBackend):
                 return json.loads(value)
             return None
         except Exception as e:
-            logger.error(f"Redis get error: {e}")
+            logger.debug(f"Redis get error: {e}")
             return None
     
     async def set(
@@ -302,7 +305,7 @@ class RedisCacheStore(CacheStoreBackend):
             self.redis.setex(key, ttl, json.dumps(value))
             return True
         except Exception as e:
-            logger.error(f"Redis set error: {e}")
+            logger.debug(f"Redis set error: {e}")
             return False
     
     async def delete(self, key: str) -> bool:

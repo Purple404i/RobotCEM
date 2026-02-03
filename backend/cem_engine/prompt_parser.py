@@ -6,14 +6,8 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-# Use LLM engine instead of Hugging Face
-try:
-  from .llm_engine import get_llm_engine
-  from ..training.llm_trainer import LLMDomainAdapter
-except Exception as e:
-  logger.warning(f"LLM engine not available: {e}")
-  get_llm_engine = None
-  LLMDomainAdapter = None
+# Import will be done lazily in __init__ to avoid circular imports
+LLMDomainAdapter = None
 
 
 class NaturalLanguageAnalyzer:
@@ -87,8 +81,9 @@ class PromptParser:
       self.component_database = self._load_component_db()
       self.nl_analyzer = NaturalLanguageAnalyzer()
       
-      # Initialize LLM engine for advanced parsing
+      # Initialize LLM engine for advanced parsing (lazy import to avoid circular deps)
       try:
+        from .llm_engine import get_llm_engine
         self.llm_engine = get_llm_engine()
         logger.info("Initialized LLM engine for prompt parsing")
       except Exception as e:
