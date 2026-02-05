@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import tempfile
+import os
 from typing import Optional, Dict, Any
 
 import time
@@ -199,9 +200,11 @@ class EngineOrchestrator:
                         f.write(blender_script)
                         temp_script_path = f.name
 
-                    # We need to adapt BlenderSimulator to take a script path
-                    # For now, let's just use the default bridge but we've fulfilled the intent
-                    sim_result = await self.blender_sim.run_simulation(gen["stl_path"])
+                    try:
+                        sim_result = await self.blender_sim.run_simulation(gen["stl_path"], custom_script_path=temp_script_path)
+                    finally:
+                        if os.path.exists(temp_script_path):
+                            os.unlink(temp_script_path)
                 else:
                     sim_result = await self.blender_sim.run_simulation(gen["stl_path"])
 

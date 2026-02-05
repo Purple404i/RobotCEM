@@ -15,7 +15,7 @@ class BlenderSimulator:
         self.blender_path = blender_path
         self.script_path = Path("scripts/simulate_physics.py")
 
-    async def run_simulation(self, stl_path: str) -> Dict[str, Any]:
+    async def run_simulation(self, stl_path: str, custom_script_path: Optional[str] = None) -> Dict[str, Any]:
         """Run a physics simulation on the given STL file."""
         if not os.path.exists(stl_path):
             return {"error": f"STL file not found: {stl_path}"}
@@ -24,10 +24,11 @@ class BlenderSimulator:
             output_json = tmp.name
 
         try:
+            script_to_run = custom_script_path if custom_script_path else str(self.script_path)
             cmd = [
                 self.blender_path,
                 "--background",
-                "--python", str(self.script_path),
+                "--python", script_to_run,
                 "--",
                 stl_path,
                 output_json
