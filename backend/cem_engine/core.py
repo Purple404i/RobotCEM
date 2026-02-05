@@ -261,9 +261,12 @@ class CEMEngine:
             parser = PromptParser()
             
             # Process prompt through LLM engine
-            llm_result = await self.llm_engine.process_prompt(session_id, user_prompt, parser)
+            llm_result = await self.llm_engine.process_prompt(session_id, user_prompt)
             
-            spec_dict = llm_result
+            if llm_result.get("success"):
+                spec_dict = llm_result.get("specification", {})
+            else:
+                spec_dict = {}
             
             logger.info("LLM parsing completed; processing output")
             

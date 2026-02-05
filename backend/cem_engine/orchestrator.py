@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import Optional, Dict, Any
 
+import time
 from backend.cem_engine.prompt_parser import PromptParser
 from backend.cem_engine.llm_engine import get_llm_engine
 from backend.cem_engine.code_generator import CSharpCodeGenerator
@@ -14,6 +15,8 @@ from backend.storage.database import ComponentSourcingEngine
 from backend.cem_engine.auto_fix import propose_fixes
 from backend.cem_engine.core import ShapeKernelAnalyzer
 from backend.training.llm_trainer import CEMTrainer
+from backend.intelligence.market_search import search_part, find_best_offer
+from backend.utils.blender_sim import BlenderSimulator
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +69,24 @@ class EngineOrchestrator:
         self.pricing = MaterialPricingEngine(pricing_config or {})
         self.sourcing_engine = ComponentSourcingEngine(db_session)
         self.shape_analyzer = ShapeKernelAnalyzer()
+        self.blender_sim = BlenderSimulator()
+        self.last_interaction = time.time()
+        self.current_design = None
+        self.output_dir = output_dir or "backend/outputs"
 
-    async def run_from_prompt(self, prompt: str, output_name: str = "generated_design") -> Dict[str, Any]:
+        # Start inactivity monitor
+        self._inactivity_task = asyncio.create_task(self._monitor_inactivity())
+
+    async def _monitor_inactivity(self):
+        """Background task to monitor inactivity."""
+        while True:
+            await asyncio.sleep(60) # Check every minute
+            try:
+                await self.check_inactivity_and_analyze()
+            except Exception as e:
+                logger.error(f"Error in inactivity monitor: {e}")
+
+    async def run_from_prompt(self, prompt: str, output_name: str = "generated_design", max_iters: int = 3) -> Dict[str, Any]:
         """Execute full workflow: parse -> source components -> validate -> generate -> optimize"""
         logger.info(f"Starting CEM workflow for: {output_name}")
         
@@ -87,8 +106,23 @@ class EngineOrchestrator:
                 budget=spec.get("budget")
             )
             part, result = sourcing_result
+
+            # If not found in database, search online market
+            if not part or result["status"] == "not_found":
+                logger.info(f"Component {component.get('name')} not found in DB. Searching market...")
+                market_results = search_part(component.get("name", "unknown"))
+                best_offer = find_best_offer(market_results)
+                if best_offer:
+                    result = {
+                        "status": "found_in_market",
+                        "part": best_offer,
+                        "price": best_offer.get("price_usd"),
+                        "url": best_offer.get("url")
+                    }
+                    spec["component_costs"][component["name"]] = best_offer.get("price_usd")
+
             spec["sourced_components"].append(result)
-            if part:
+            if part and result["status"] != "found_in_market":
                 spec["component_costs"][component["name"]] = part.price
         
         # Step 3: Recommend ShapeKernel BaseShape
@@ -149,10 +183,42 @@ class EngineOrchestrator:
             gen = await self.executor.compile_and_run(csharp_code, output_name, design_specs=spec)
             result["generation"] = gen
             stl_analysis = gen.get("analysis", {})
+
+            # Step 7.1: Run Blender Simulation
+            if gen.get("success") and gen.get("stl_path"):
+                logger.info("Step 7.1: Running Blender physics simulation...")
+                sim_result = await self.blender_sim.run_simulation(gen["stl_path"])
+                result["simulation"] = sim_result
+
+                # Step 7.2: LLM analysis of results
+                logger.info("Step 7.2: LLM analysis of simulation results...")
+                llm_analysis = await self.llm_engine.analyze_simulation(stl_analysis, sim_result)
+                result["scientific_analysis"] = llm_analysis
+
+                # Auto-fix based on LLM analysis if it failed stability
+                if (sim_result.get("fell_over") or llm_analysis.get("suggested_fixes")) and max_iters > 0:
+                    logger.info("Design unstable or failed analysis. Applying LLM suggested fixes...")
+                    suggested_fixes = llm_analysis.get("suggested_fixes", [])
+                    if suggested_fixes:
+                        # Apply fixes to spec
+                        for fix in suggested_fixes:
+                            logger.info(f"Applying fix: {fix}")
+                            # Simple logic to update spec based on LLM string suggestions
+                            # In a real system, the LLM would provide a JSON patch
+                            if "increase" in fix.lower() and "dimension" in fix.lower():
+                                spec["dimensions"] = {k: v * 1.2 for k, v in spec.get("dimensions", {}).items() if isinstance(v, (int, float))}
+                            if "material" in fix.lower():
+                                spec["materials"] = ["Aluminum_6061"] # Upgrade to metal as safe default
+
+                        # Re-run generation with updated spec (recursive call with reduced max_iters)
+                        return await self.run_from_prompt(f"Apply fixes to {output_name}: {', '.join(suggested_fixes)}", output_name, max_iters=max_iters-1)
         else:
             logger.info("No PicoGK executor configured — skipping compile/run step")
             stl_analysis = {}
             result["generation"] = {"success": False, "error": "No executor configured"}
+
+        self.current_design = result
+        self.last_interaction = time.time()
 
         # Step 8: Generate BOM and final pricing
         logger.info("Step 8: Generating Bill of Materials with pricing...")
@@ -165,6 +231,30 @@ class EngineOrchestrator:
 
         logger.info("CEM workflow completed successfully")
         return result
+
+    async def check_inactivity_and_analyze(self) -> Optional[Dict[str, Any]]:
+        """
+        Check if 5 minutes have passed since last interaction.
+        If so, trigger a re-analysis and simulation.
+        """
+        if self.current_design and (time.time() - self.last_interaction) > 300:
+            logger.info("5 minutes of inactivity detected. Triggering automatic re-analysis.")
+            # Reset timer so we don't loop
+            self.last_interaction = time.time()
+
+            # Re-run simulation and analysis
+            if self.current_design.get("generation", {}).get("stl_path"):
+                stl_path = self.current_design["generation"]["stl_path"]
+                stl_analysis = self.current_design["generation"].get("analysis", {})
+
+                sim_result = await self.blender_sim.run_simulation(stl_path)
+                llm_analysis = await self.llm_engine.analyze_simulation(stl_analysis, sim_result)
+
+                self.current_design["simulation"] = sim_result
+                self.current_design["scientific_analysis"] = llm_analysis
+
+                return self.current_design
+        return None
 
     def _validate(self, spec: Dict) -> Dict:
         structural = self.validator.validate_structural(spec)

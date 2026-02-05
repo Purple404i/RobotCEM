@@ -18,17 +18,9 @@ pytest>=7.4.3
 pytest-asyncio>=0.21.1
 torch>=2.2.0
 sentencepiece>=0.1.99
-duckduckgo-search>=2.6.0
+duckduckgo-search>=6.0.0
 yfinance>=0.2.25
 firecrawl-py>=0.1.7
 requests>=2.31.0
 pandas>=2.2.3
 jinja2>=3.1.4
-'''
-API 	Best For	Free Tier Details
-Alpha Vantage	Market Prices & Trends	500 requests/day for stocks, crypto, and forex.
-Firecrawl	Extracting Attributes	500 free credits to turn websites into LLM-ready data.
-Finnhub	Global Market Coverage	Generous free quota for real-time US stock data and news.
-iTick API	Real-Time Latency	Unlimited free calls for basic global stock quotes.
-'''
-#get these above APIs later 
