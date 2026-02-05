@@ -76,8 +76,13 @@ class EngineOrchestrator:
         self.current_design = None
         self.output_dir = output_dir or "backend/outputs"
 
-        # Start inactivity monitor
-        self._inactivity_task = asyncio.create_task(self._monitor_inactivity())
+        # Start inactivity monitor if loop is running
+        try:
+            loop = asyncio.get_running_loop()
+            self._inactivity_task = loop.create_task(self._monitor_inactivity())
+        except RuntimeError:
+            logger.warning("No running event loop, inactivity monitor not started.")
+            self._inactivity_task = None
 
     async def _monitor_inactivity(self):
         """Background task to monitor inactivity."""
