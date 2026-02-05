@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Wand2, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Wand2, Loader2, Sparkles, X } from 'lucide-react';
 
 export default function PromptInterface({ onGenerate, loading }) {
   const [prompt, setPrompt] = useState('');
@@ -7,21 +8,17 @@ export default function PromptInterface({ onGenerate, loading }) {
   const textareaRef = useRef(null);
 
   const examples = [
-    "Build a 4-axis robot arm with 200mm reach, capable of lifting 500g, using MG996R servos, 3D printable in PLA",
-    "Design a parallel jaw gripper with 40mm grip range, printed in PETG, for picking up cylindrical objects",
-    "Create a 2-DOF pan-tilt mechanism for a camera, using 28BYJ-48 stepper motors, lightweight design",
-    "Generate a linear actuator with 100mm stroke, lead screw driven, aluminum frame with 3D printed components"
+    "Design a bio-inspired robotic gripper for handling delicate biological samples with lattice infill for weight reduction.",
+    "Build a 4-axis robot arm with 500mm reach, capable of lifting 2kg, using MG996R servos.",
+    "Create a lightweight 2-DOF pan-tilt mechanism using 28BYJ-48 stepper motors.",
+    "Generate a linear actuator with 100mm stroke, aluminum frame with 3D printed components."
   ];
 
-  // Auto-resize textarea based on content
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
-      // Reset height to auto to get the correct scrollHeight
       textarea.style.height = 'auto';
-      
-      // Calculate new height (min 150px, max 400px)
-      const newHeight = Math.max(150, Math.min(textarea.scrollHeight, 400));
+      const newHeight = Math.max(120, Math.min(textarea.scrollHeight, 400));
       textarea.style.height = `${newHeight}px`;
     }
   }, [prompt]);
@@ -33,92 +30,115 @@ export default function PromptInterface({ onGenerate, loading }) {
     }
   };
 
-  const useExample = (example) => {
-    setPrompt(example);
-    setShowExamples(false);
-  };
-
-  const handleTextareaChange = (e) => {
-    setPrompt(e.target.value);
-  };
-
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="relative">
+    <div className="w-full">
+      <form onSubmit={handleSubmit} className="relative group">
+        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-1000"></div>
+
+        <div className="relative bg-[#121216] border border-slate-800 rounded-2xl overflow-hidden focus-within:border-blue-500/50 transition-all">
           <textarea
             ref={textareaRef}
             value={prompt}
-            onChange={handleTextareaChange}
-            placeholder="Describe your device in detail: dimensions, loads, materials, components..."
-            className="w-full p-4 pr-12 border-2 border-gray-700 rounded-lg bg-gray-800 text-white resize-y focus:border-blue-500 focus:outline-none transition-colors min-h-[150px] max-h-[400px]"
-            style={{ 
-              height: '150px',
-              overflow: 'auto'
-            }}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="Describe your robotic device... (e.g. 'Design a 3-DOF arm for biology')"
+            className="w-full p-6 bg-transparent text-slate-100 placeholder:text-slate-500 resize-none outline-none min-h-[120px] text-lg leading-relaxed"
             disabled={loading}
           />
-          <button
-            type="button"
-            onClick={() => setShowExamples(!showExamples)}
-            className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
-            title="Show examples"
-          >
-            <Wand2 size={20} />
-          </button>
-        </div>
 
-        {showExamples && (
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-2">
-            <p className="text-sm text-gray-400 mb-3">Example prompts:</p>
-            {examples.map((example, i) => (
-              <button
-                key={i}
+          <div className="flex items-center justify-between px-6 py-4 bg-slate-900/50 border-t border-slate-800">
+            <div className="flex gap-4">
+               <button
                 type="button"
-                onClick={() => useExample(example)}
-                className="w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors text-sm"
-              >
-                {example}
-              </button>
-            ))}
-          </div>
-        )}
+                onClick={() => setShowExamples(true)}
+                className="text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-blue-400 transition-colors flex items-center gap-2"
+               >
+                 <Sparkles size={14} />
+                 Examples
+               </button>
+            </div>
 
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-400">
-            {prompt.length} / 2000 characters
+            <button
+              type="submit"
+              disabled={loading || !prompt.trim()}
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <RefreshCw className="animate-spin" size={18} />
+                  Aurora is Thinking...
+                </>
+              ) : (
+                <>
+                  <Wand2 size={18} />
+                  Generate Design
+                </>
+              )}
+            </button>
           </div>
-          <button
-            type="submit"
-            disabled={loading || !prompt.trim()}
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-gray-600 disabled:to-gray-600 text-white font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="animate-spin" size={20} />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Wand2 size={20} />
-                Generate Design
-              </>
-            )}
-          </button>
         </div>
       </form>
 
-      {loading && (
-        <div className="mt-6 bg-gray-800 border border-blue-500 rounded-lg p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <Loader2 className="animate-spin text-blue-500" size={24} />
-            <span className="font-semibold">Generating your design...</span>
-          </div>
-          <p className="text-sm text-gray-400">
-            This may take 1-3 minutes. We're parsing your prompt, validating physics, generating geometry, and calculating costs.
-          </p>
-        </div>
-      )}
+      <AnimatePresence>
+        {showExamples && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
+          >
+            <div className="bg-[#121216] border border-slate-800 w-full max-w-xl rounded-3xl p-8 shadow-2xl relative">
+              <button
+                onClick={() => setShowExamples(false)}
+                className="absolute top-6 right-6 text-slate-500 hover:text-white"
+              >
+                <X size={24} />
+              </button>
+
+              <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <Sparkles className="text-blue-500" />
+                Inspiration
+              </h3>
+
+              <div className="flex flex-col gap-3">
+                {examples.map((ex, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setPrompt(ex);
+                      setShowExamples(false);
+                    }}
+                    className="text-left p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500/50 hover:bg-slate-800 transition-all text-sm text-slate-300 leading-relaxed"
+                  >
+                    {ex}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
+}
+
+function RefreshCw({ className, size }) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+            <path d="M21 3v5h-5" />
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+            <path d="M3 21v-5h5" />
+        </svg>
+    )
 }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import './SpecificationPanel.css';
-import { ChevronDown, ChevronRight, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, ChevronRight, AlertTriangle, CheckCircle, Info, Box, Ruler, Weight, ShieldCheck } from 'lucide-react';
 
 export default function SpecificationPanel({ spec, validation }) {
   const [expandedSections, setExpandedSections] = useState({
@@ -18,132 +18,106 @@ export default function SpecificationPanel({ spec, validation }) {
     }));
   };
 
-  const Section = ({ title, children, section }) => (
-    <div className="spec-section">
+  const Section = ({ title, icon, children, section }) => (
+    <div className="border-b border-slate-800 last:border-0">
       <button
         onClick={() => toggleSection(section)}
-        className="spec-section-header"
+        className="w-full py-4 flex items-center justify-between hover:bg-slate-800/30 transition-colors px-4 rounded-lg group"
       >
-        <h3 className="spec-section-title">{title}</h3>
-        {expandedSections[section] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-      </button>
-      {expandedSections[section] && (
-        <div className="spec-section-content">
-          {children}
+        <div className="flex items-center gap-3">
+          <div className="text-slate-500 group-hover:text-blue-400 transition-colors">
+            {icon}
+          </div>
+          <h3 className="font-bold text-sm tracking-tight text-slate-300">{title}</h3>
         </div>
-      )}
+        {expandedSections[section] ? <ChevronDown size={16} className="text-slate-600" /> : <ChevronRight size={16} className="text-slate-600" />}
+      </button>
+      <AnimatePresence>
+        {expandedSections[section] && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="p-4 pt-0">
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 
   return (
-    <div className="spec-panel">
-      <div className="spec-header">
-        <h2 className="spec-header-title">Design Specification</h2>
+    <div className="bg-[#121216] border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+      <div className="p-4 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between">
+        <h2 className="font-bold text-slate-100 flex items-center gap-2">
+          <ShieldCheck size={18} className="text-blue-500" />
+          Technical Specs
+        </h2>
+        {validation?.is_valid && (
+           <span className="text-[10px] font-black uppercase tracking-widest text-green-500 bg-green-500/10 px-2 py-0.5 rounded">Verified</span>
+        )}
       </div>
 
-      {/* Validation Status */}
-      {validation && (
-        <div className={`spec-validation ${validation.is_valid ? 'validation-success' : 'validation-warning'}`}>
-          <div className="validation-icon">
-            {validation.is_valid ? (
-              <CheckCircle size={20} />
-            ) : (
-              <AlertTriangle size={20} />
-            )}
-          </div>
-          <div className="validation-content">
-            <h3 className="validation-title">
-              {validation.is_valid ? 'Design Validated' : 'Design Warnings'}
-            </h3>
-            
-            {validation.warnings && validation.warnings.length > 0 && (
-              <div className="validation-warnings">
-                {validation.warnings.map((warning, idx) => (
-                  <p key={idx} className="warning-item">• {warning}</p>
-                ))}
-              </div>
-            )}
-            
-            {validation.suggested_fixes && validation.suggested_fixes.length > 0 && (
-              <div className="validation-fixes">
-                <p className="fixes-title">Suggested Improvements:</p>
-                {validation.suggested_fixes.map((fix, idx) => (
-                  <p key={idx} className="fix-item">• {fix}</p>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Specifications */}
-      <div className="spec-sections">
-        <Section title="Device Type" section="type">
-          <div className="spec-grid spec-grid-2">
-            <div className="spec-item">
-              <p className="spec-label">Type</p>
-              <p className="spec-value">{spec.device_type.replace('_', ' ')}</p>
+      <div className="flex flex-col">
+        <Section title="Device & Process" icon={<Box size={16} />} section="type">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Classification</p>
+              <p className="text-sm font-semibold text-slate-200 capitalize">{spec.device_type.replace('_', ' ')}</p>
             </div>
-            <div className="spec-item">
-              <p className="spec-label">Manufacturing</p>
-              <p className="spec-value">{spec.manufacturing}</p>
+            <div className="space-y-1">
+              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Manufacturing</p>
+              <p className="text-sm font-semibold text-slate-200">{spec.manufacturing}</p>
             </div>
           </div>
         </Section>
 
-        <Section title="Dimensions" section="dimensions">
-          <div className="spec-grid spec-grid-3">
+        <Section title="Dimensions" icon={<Ruler size={16} />} section="dimensions">
+          <div className="grid grid-cols-2 gap-y-4 gap-x-6">
             {Object.entries(spec.dimensions || {}).map(([key, value]) => (
-              <div key={key} className="spec-item">
-                <p className="spec-label">{key.replace('_', ' ')}</p>
-                <p className="spec-value">{value} mm</p>
+              <div key={key} className="space-y-1">
+                <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">{key.replace('_', ' ')}</p>
+                <p className="text-sm font-semibold text-slate-200">{value} <span className="text-[10px] text-slate-500 font-normal">mm</span></p>
               </div>
             ))}
           </div>
         </Section>
 
-        <Section title="Loads & Forces" section="loads">
-          <div className="spec-grid spec-grid-3">
+        <Section title="Loads & Dynamics" icon={<Weight size={16} />} section="loads">
+          <div className="grid grid-cols-2 gap-y-4 gap-x-6">
             {Object.entries(spec.loads || {}).map(([key, value]) => (
-              <div key={key} className="spec-item">
-                <p className="spec-label">{key.replace('_', ' ')}</p>
-                <p className="spec-value">
-                  {value} {key.includes('kg') ? 'kg' : key.includes('torque') ? 'N·m' : 'N'}
+              <div key={key} className="space-y-1">
+                <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">{key.replace('_', ' ')}</p>
+                <p className="text-sm font-semibold text-slate-200">
+                  {value} <span className="text-[10px] text-slate-500 font-normal">{key.includes('kg') ? 'kg' : key.includes('torque') ? 'N·m' : 'N'}</span>
                 </p>
               </div>
             ))}
           </div>
         </Section>
 
-        <Section title="Materials" section="materials">
-          <div className="spec-materials">
-            {spec.materials && spec.materials.map((material, idx) => (
-              <span key={idx} className="material-badge">
-                {material}
-              </span>
-            ))}
-          </div>
-        </Section>
-
-        <Section title="Components" section="components">
+        <Section title="Bill of Materials" icon={<Info size={16} />} section="components">
           {spec.components && spec.components.length > 0 ? (
-            <div className="spec-components">
+            <div className="flex flex-col gap-2">
               {spec.components.map((component, idx) => (
-                <div key={idx} className="component-card">
-                  <div className="component-info">
-                    <p className="component-name">{component.name || component.type}</p>
+                <div key={idx} className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex justify-between items-center group">
+                  <div>
+                    <p className="text-sm font-bold text-slate-200">{component.name || component.type}</p>
                     {component.mpn && (
-                      <p className="component-mpn">MPN: {component.mpn}</p>
+                      <p className="text-[10px] font-mono text-slate-500 uppercase tracking-tighter">PN: {component.mpn}</p>
                     )}
                   </div>
-                  <span className="component-qty">
-                    Qty: {component.quantity}
+                  <span className="text-xs font-black text-blue-500 bg-blue-500/10 px-2 py-1 rounded-lg">
+                    ×{component.quantity}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="spec-empty">No components specified</p>
+            <p className="text-xs text-slate-500 italic">No external components required.</p>
           )}
         </Section>
       </div>

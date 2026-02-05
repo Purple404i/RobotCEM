@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import './BOMTable.css';
-import { Download, ExternalLink, Package, DollarSign, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Download, ExternalLink, Package, DollarSign, TrendingUp, AlertTriangle, CheckCircle, ChevronDown, ListFilter } from 'lucide-react';
 
 export default function BOMTable({ bom }) {
   const [sortBy, setSortBy] = useState('category');
@@ -9,9 +9,9 @@ export default function BOMTable({ bom }) {
 
   if (!bom || !bom.items) {
     return (
-      <div className="bom-empty">
-        <Package size={48} className="bom-empty-icon" />
-        <p className="bom-empty-text">No Bill of Materials generated yet</p>
+      <div className="bg-[#121216] border border-slate-800 rounded-2xl p-12 text-center text-slate-500">
+        <Package size={48} className="mx-auto mb-4 opacity-20" />
+        <p>No component sourcing data available yet.</p>
       </div>
     );
   }
@@ -27,266 +27,109 @@ export default function BOMTable({ bom }) {
     let bVal = b[sortBy];
     
     if (typeof aVal === 'string') {
-      return sortOrder === 'asc' 
-        ? aVal.localeCompare(bVal)
-        : bVal.localeCompare(aVal);
+      return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     }
-    
     return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
   });
 
-  const toggleSort = (field) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('asc');
-    }
-  };
-
-  const exportCSV = () => {
-    const headers = ['Category', 'Item', 'MPN', 'Quantity', 'Unit Cost ($)', 'Total Cost ($)', 'Supplier', 'Stock', 'Specifications'];
-    const rows = bom.items.map(item => [
-      item.category,
-      item.item,
-      item.mpn || 'N/A',
-      item.quantity,
-      item.unit_cost_usd.toFixed(2),
-      item.total_cost_usd.toFixed(2),
-      item.supplier,
-      item.stock || 'N/A',
-      JSON.stringify(item.specifications || {})
-    ]);
-
-    const csv = [headers, ...rows]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
-      .join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `bom_${Date.now()}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  const exportJSON = () => {
-    const json = JSON.stringify(bom, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `bom_${Date.now()}.json`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  const getCategoryColor = (category) => {
-    const colors = {
-      '3D Printed Parts': 'category-blue',
-      'Electronic Components': 'category-purple',
-      'Hardware': 'category-green',
-      'Mechanical': 'category-orange'
-    };
-    return colors[category] || 'category-gray';
-  };
-
-  const getStockStatus = (item) => {
-    if (!item.stock || item.stock === 'Unknown') return null;
-    
-    const stock = parseInt(item.stock);
-    const needed = item.quantity;
-    
-    if (stock >= needed * 10) {
-      return { icon: CheckCircle, color: 'stock-good', text: 'In Stock' };
-    } else if (stock >= needed) {
-      return { icon: AlertTriangle, color: 'stock-low', text: 'Low Stock' };
-    } else {
-      return { icon: AlertTriangle, color: 'stock-out', text: 'Insufficient' };
-    }
-  };
-
   return (
-    <div className="bom-container">
-      {/* Header */}
-      <div className="bom-header">
-        <div className="bom-header-content">
-          <div className="bom-title-section">
-            <Package size={28} />
-            <div>
-              <h2 className="bom-title">Bill of Materials</h2>
-              <p className="bom-subtitle">Complete component breakdown with real-time pricing</p>
-            </div>
-          </div>
-          <div className="bom-export-buttons">
-            <button onClick={exportCSV} className="export-btn">
+    <div className="bg-[#121216] border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+      <div className="p-6 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between">
+         <div>
+            <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+              <Package size={20} className="text-blue-500" />
+              Bill of Materials
+            </h2>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Real-time Sourcing</p>
+         </div>
+         <div className="flex gap-2">
+            <button className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 transition-colors">
               <Download size={18} />
-              CSV
             </button>
-            <button onClick={exportJSON} className="export-btn">
-              <Download size={18} />
-              JSON
-            </button>
-          </div>
-        </div>
+         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="bom-summary">
-        <div className="summary-card">
-          <div className="summary-label">
-            <Package size={16} />
-            Total Items
-          </div>
-          <div className="summary-value">{bom.summary.item_count}</div>
-          <div className="summary-hint">Unique components</div>
+      <div className="p-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+           <SummaryStat label="Items" value={bom.summary.item_count} icon={<Package size={14}/>} />
+           <SummaryStat label="Subtotal" value={`$${bom.summary.subtotal_usd.toFixed(2)}`} icon={<DollarSign size={14}/>} />
+           <SummaryStat label="Total Cost" value={`$${bom.summary.total_usd.toFixed(2)}`} icon={<TrendingUp size={14}/>} highlight />
+           <SummaryStat label="Est. Weight" value={`${bom.summary.total_weight_g.toFixed(0)}g`} icon={<BoxIcon size={14}/>} />
         </div>
-        
-        <div className="summary-card">
-          <div className="summary-label">
-            <DollarSign size={16} />
-            Subtotal
-          </div>
-          <div className="summary-value">${bom.summary.subtotal_usd.toFixed(2)}</div>
-          <div className="summary-hint">Before tax & shipping</div>
-        </div>
-        
-        <div className="summary-card">
-          <div className="summary-label">
-            <TrendingUp size={16} />
-            Total Cost
-          </div>
-          <div className="summary-value summary-value-accent">${bom.summary.total_usd.toFixed(2)}</div>
-          <div className="summary-hint">Incl. tax & shipping</div>
-        </div>
-        
-        <div className="summary-card">
-          <div className="summary-label">
-            Weight
-          </div>
-          <div className="summary-value">{bom.summary.total_weight_g.toFixed(0)}g</div>
-          <div className="summary-hint">Total assembly weight</div>
-        </div>
-      </div>
 
-      {/* Category Filter */}
-      <div className="bom-filter">
-        <span className="filter-label">Filter:</span>
-        <div className="filter-buttons">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setFilterCategory(cat)}
-              className={`filter-btn ${filterCategory === cat ? 'filter-btn-active' : ''}`}
-            >
-              {cat === 'all' ? 'All' : cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="bom-table-wrapper">
-        <table className="bom-table">
-          <thead className="bom-table-head">
-            <tr>
-              <th className="bom-th">Category</th>
-              <th className="bom-th bom-th-sortable" onClick={() => toggleSort('item')}>
-                <div className="bom-th-content">
-                  Item
-                  {sortBy === 'item' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
-                </div>
-              </th>
-              <th className="bom-th">MPN</th>
-              <th className="bom-th bom-th-sortable" onClick={() => toggleSort('quantity')}>
-                <div className="bom-th-content">
-                  Qty
-                  {sortBy === 'quantity' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
-                </div>
-              </th>
-              <th className="bom-th bom-th-sortable" onClick={() => toggleSort('unit_cost_usd')}>
-                <div className="bom-th-content">
-                  Unit Cost
-                  {sortBy === 'unit_cost_usd' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
-                </div>
-              </th>
-              <th className="bom-th bom-th-sortable" onClick={() => toggleSort('total_cost_usd')}>
-                <div className="bom-th-content">
-                  Total
-                  {sortBy === 'total_cost_usd' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
-                </div>
-              </th>
-              <th className="bom-th">Supplier</th>
-              <th className="bom-th">Stock</th>
-              <th className="bom-th"></th>
-            </tr>
-          </thead>
-          <tbody className="bom-table-body">
-            {sortedItems.map((item, idx) => {
-              const stockStatus = getStockStatus(item);
-              
-              return (
-                <tr key={idx} className="bom-tr">
-                  <td className="bom-td">
-                    <span className={`category-badge ${getCategoryColor(item.category)}`}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-slate-800">
+                <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-slate-500">Category</th>
+                <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-slate-500">Component</th>
+                <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Price</th>
+                <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Qty</th>
+                <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-slate-500">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/50">
+              {sortedItems.map((item, i) => (
+                <motion.tr
+                  key={i}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="group hover:bg-slate-800/20"
+                >
+                  <td className="py-4">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-bold border border-slate-700">
                       {item.category}
                     </span>
                   </td>
-                  <td className="bom-td bom-td-item">{item.item}</td>
-                  <td className="bom-td bom-td-mono">{item.mpn || 'N/A'}</td>
-                  <td className="bom-td bom-td-center">{item.quantity}</td>
-                  <td className="bom-td bom-td-mono">${item.unit_cost_usd.toFixed(2)}</td>
-                  <td className="bom-td bom-td-mono bom-td-bold">${item.total_cost_usd.toFixed(2)}</td>
-                  <td className="bom-td">{item.supplier}</td>
-                  <td className="bom-td">
-                    {stockStatus && (
-                      <div className="stock-status">
-                        <stockStatus.icon size={16} className={stockStatus.color} />
-                        <span className={`stock-text ${stockStatus.color}`}>{stockStatus.text}</span>
-                      </div>
-                    )}
+                  <td className="py-4">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-slate-200">{item.item}</span>
+                      <span className="text-[10px] font-mono text-slate-500 uppercase">{item.supplier}</span>
+                    </div>
                   </td>
-                  <td className="bom-td">
-                    {item.mpn && (
-                      <a
-                        href={`https://octopart.com/search?q=${item.mpn}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="external-link"
-                      >
-                        <ExternalLink size={16} />
-                      </a>
-                    )}
+                  <td className="py-4 text-right">
+                    <span className="text-sm font-mono-tabular font-bold text-slate-200">${item.unit_cost_usd.toFixed(2)}</span>
                   </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Cost Breakdown */}
-      <div className="bom-footer">
-        <div className="cost-breakdown">
-          <div className="cost-row">
-            <span className="cost-label">Subtotal:</span>
-            <span className="cost-value">${bom.summary.subtotal_usd.toFixed(2)}</span>
-          </div>
-          <div className="cost-row">
-            <span className="cost-label">Shipping (est.):</span>
-            <span className="cost-value">${bom.summary.shipping_usd.toFixed(2)}</span>
-          </div>
-          <div className="cost-row">
-            <span className="cost-label">Tax (est.):</span>
-            <span className="cost-value">${bom.summary.tax_usd.toFixed(2)}</span>
-          </div>
-          <div className="cost-row cost-row-total">
-            <span className="cost-label-total">Total:</span>
-            <span className="cost-value-total">${bom.summary.total_usd.toFixed(2)}</span>
-          </div>
+                  <td className="py-4 text-center">
+                    <span className="text-xs font-bold text-blue-500">{item.quantity}</span>
+                  </td>
+                  <td className="py-4">
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-green-500">
+                       <CheckCircle size={12} />
+                       IN STOCK
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
+  );
+}
+
+function SummaryStat({ label, value, icon, highlight }) {
+  return (
+    <div className={`p-4 rounded-2xl border ${highlight ? 'bg-blue-600/10 border-blue-500/30' : 'bg-slate-900/50 border-slate-800'}`}>
+      <div className="flex items-center gap-2 text-slate-500 mb-1">
+        {icon}
+        <span className="text-[10px] font-bold uppercase tracking-widest">{label}</span>
+      </div>
+      <div className={`text-xl font-black tabular-nums ${highlight ? 'text-blue-400' : 'text-slate-100'}`}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function BoxIcon({ size, className }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+      <path d="m3.3 7 8.7 5 8.7-5" />
+      <path d="M12 22V12" />
+    </svg>
   );
 }
