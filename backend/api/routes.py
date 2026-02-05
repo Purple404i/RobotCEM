@@ -10,10 +10,12 @@ Endpoints for:
 """
 
 from fastapi import APIRouter, HTTPException, WebSocket, Query, Body
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 import logging
 import uuid
+import os
 
 from backend.cem_engine.orchestrator import EngineOrchestrator
 from backend.cem_engine.llm_engine import get_llm_engine
@@ -401,6 +403,37 @@ async def websocket_design_endpoint(websocket: WebSocket, session_id: str):
 # ============================================================================
 # Test Routes
 # ============================================================================
+
+@router.get("/render/{job_id}")
+async def get_blender_render(job_id: str):
+    """
+    Generate and return a high-quality Blender render of the model.
+    """
+    try:
+        orchestrator = get_orchestrator()
+        # Find the STL in the output dir
+        stl_path = os.path.join(orchestrator.output_dir, f"{job_id}.stl")
+        if not os.path.exists(stl_path):
+            # Fallback to current design if job_id matches
+            if orchestrator.current_design and orchestrator.current_design.get("generation", {}).get("stl_path"):
+                 stl_path = orchestrator.current_design["generation"]["stl_path"]
+            else:
+                raise HTTPException(status_code=404, detail="STL not found for this job")
+
+        output_image = os.path.join(orchestrator.output_dir, f"{job_id}_render.png")
+
+        # Trigger render
+        result = await orchestrator.blender_sim.render_model(stl_path, output_image)
+
+        if "error" in result:
+            raise HTTPException(status_code=500, detail=result["error"])
+
+        return FileResponse(output_image)
+
+    except Exception as e:
+        logger.error(f"Rendering failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/test")
 async def test_route():

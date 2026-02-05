@@ -16,6 +16,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('design');
+  const [viewerMode, setViewerMode] = useState('threejs');
 
   // Poll for status updates
   useEffect(() => {
@@ -184,8 +185,19 @@ export default function App() {
                                  Blender Simulated
                                </div>
                              )}
+                             <button
+                                onClick={() => setViewerMode(viewerMode === 'threejs' ? 'blender' : 'threejs')}
+                                className="px-3 py-1 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 backdrop-blur rounded-full text-[10px] font-bold uppercase tracking-wider border border-indigo-500/30 transition-all"
+                             >
+                               Switch to {viewerMode === 'threejs' ? 'Blender Render' : 'Three.js View'}
+                             </button>
                           </div>
-                          <STLViewer3D stlUrl={`${API_BASE}${status.stl_url}`} />
+                          <STLViewer3D
+                            stlUrl={`${API_BASE}${status.stl_url}`}
+                            mode={viewerMode}
+                            jobId={jobId}
+                            apiBase={API_BASE}
+                          />
                         </div>
                       ) : (
                         <div className="bg-[#121216] border border-slate-800 rounded-2xl h-[600px] flex flex-col items-center justify-center text-slate-500 gap-4">

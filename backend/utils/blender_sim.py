@@ -55,3 +55,71 @@ class BlenderSimulator:
         finally:
             if os.path.exists(output_json):
                 os.unlink(output_json)
+
+    async def render_model(self, stl_path: str, output_image: str) -> Dict[str, Any]:
+        """Render a high-quality image of the STL model using Blender."""
+        if not os.path.exists(stl_path):
+            return {"error": f"STL file not found: {stl_path}"}
+
+        render_script = f"""
+import bpy
+import sys
+
+# Clear scene
+bpy.ops.wm.read_factory_settings(use_empty=True)
+
+# Import STL
+try:
+    bpy.ops.wm.stl_import(filepath={repr(stl_path)})
+except AttributeError:
+    bpy.ops.import_mesh.stl(filepath={repr(stl_path)})
+
+obj = bpy.context.selected_objects[0]
+obj.select_set(True)
+bpy.context.view_layer.objects.active = obj
+
+# Material
+mat = bpy.data.materials.new(name="AuroraMaterial")
+mat.use_nodes = True
+nodes = mat.node_tree.nodes
+nodes["Principled BSDF"].inputs[0].default_value = (0.2, 0.5, 1.0, 1.0) # Blue
+nodes["Principled BSDF"].inputs[7].default_value = 0.8 # Metallic
+obj.data.materials.append(mat)
+
+# Studio Lights
+bpy.ops.object.light_add(type='AREA', radius=5, location=(10, 10, 10))
+bpy.ops.object.light_add(type='AREA', radius=5, location=(-10, -10, 10))
+
+# Camera setup
+bpy.ops.object.camera_add(location=(15, -15, 15), rotation=(0.78, 0, 0.78))
+bpy.context.scene.camera = bpy.context.object
+
+# Render settings
+bpy.context.scene.render.filepath = {repr(output_image)}
+bpy.context.scene.render.resolution_x = 1280
+bpy.context.scene.render.resolution_y = 720
+bpy.ops.render.render(write_still=True)
+"""
+
+        with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False) as f:
+            f.write(render_script)
+            script_path = f.name
+
+        try:
+            cmd = [
+                self.blender_path,
+                "--background",
+                "--python", script_path
+            ]
+
+            logger.info(f"Rendering in Blender: {' '.join(cmd)}")
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.communicate()
+
+            if process.returncode != 0:
+                return {"error": "Render failed", "details": stderr.decode()}
+
+            return {"success": True, "image_path": output_image}
+        finally:
+            if os.path.exists(script_path):
+                os.unlink(script_path)

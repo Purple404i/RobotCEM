@@ -4,7 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 import { Box, Layers, Maximize2, Loader2 } from 'lucide-react';
 
-export default function STLViewer3D({ stlUrl }) {
+export default function STLViewer3D({ stlUrl, mode = 'threejs', jobId, apiBase }) {
   const mountRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [meshInfo, setMeshInfo] = useState(null);
@@ -13,7 +13,8 @@ export default function STLViewer3D({ stlUrl }) {
   const meshRef = useRef(null);
 
   useEffect(() => {
-    if (!stlUrl) return;
+    setLoading(true);
+    if (!stlUrl || mode !== 'threejs') return;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x121216);
@@ -92,9 +93,29 @@ export default function STLViewer3D({ stlUrl }) {
 
   return (
     <div className="relative w-full h-full group">
-      <div ref={mountRef} className="w-full h-full" />
-      
-      {loading && (
+      {mode === 'threejs' ? (
+        <div ref={mountRef} className="w-full h-full" />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-slate-950 relative">
+          <img
+            src={`${apiBase}/api/render/${jobId}`}
+            className="max-w-full max-h-full object-contain shadow-2xl"
+            alt="Blender Scientific Render"
+            onLoad={() => setLoading(false)}
+            onError={() => setLoading(false)}
+          />
+          {loading && (
+             <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+                <Loader2 className="animate-spin text-blue-500" size={32} />
+             </div>
+          )}
+          <div className="absolute bottom-6 right-6 px-4 py-2 bg-black/60 backdrop-blur rounded-xl border border-white/10 text-[10px] font-bold text-white uppercase tracking-widest">
+            Cycles Photorealistic Render
+          </div>
+        </div>
+      )}
+
+      {loading && mode === 'threejs' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/50 backdrop-blur-sm z-20">
           <Loader2 className="animate-spin text-blue-500 mb-2" size={32} />
           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Geometry</span>
