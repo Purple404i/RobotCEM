@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RobotCEM")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+86478138fea3425bf2dd9202955da43b833e513b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7121c2fda396bbe165d3552f56b5fd52aec26926")]
 [assembly: System.Reflection.AssemblyProductAttribute("RobotCEM")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RobotCEM")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
