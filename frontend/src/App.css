@@ -1,346 +1,40 @@
-/* App.css - Claude-inspired centered layout */
+/* Custom styles not easily handled by Tailwind */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-/* Root Container */
 .app-container {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: linear-gradient(135deg, #0a0e1a 0%, #1a1f35 50%, #0f1419 100%);
-  color: #e8eaed;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.03) 0, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.03) 0, transparent 50%);
 }
 
-/* Header */
-.app-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: rgba(15, 20, 31, 0.8);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+/* Glassmorphism utility */
+.glass {
+  background: rgba(18, 18, 22, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-.header-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 16px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+/* 3D viewer specific */
+.canvas-container canvas {
+  cursor: grab;
 }
 
-.logo-section {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.canvas-container canvas:active {
+  cursor: grabbing;
 }
 
-.logo-icon {
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.logo-text h1 {
-  font-size: 18px;
-  font-weight: 600;
+/* Hide spin buttons in number inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
   margin: 0;
-  color: #ffffff;
-  letter-spacing: -0.01em;
 }
 
-.logo-text p {
-  font-size: 13px;
-  margin: 0;
-  color: #9ca3af;
-  font-weight: 400;
-}
-
-.new-design-btn {
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
-}
-
-.new-design-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-/* Main Content */
-.app-main {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  padding: 40px 24px;
-}
-
-.content-wrapper {
-  width: 100%;
-  max-width: 900px;
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-}
-
-/* Error Banner */
-.error-banner {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 12px;
-  padding: 16px 20px;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  color: #fca5a5;
-  animation: slideDown 0.3s ease-out;
-}
-
-.error-content h3 {
-  margin: 0 0 4px 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: #fecaca;
-}
-
-.error-content p {
-  margin: 0;
-  font-size: 14px;
-  color: #fca5a5;
-  line-height: 1.5;
-}
-
-/* Prompt Section */
-.prompt-section {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  margin-top: 40px;
-  animation: fadeIn 0.5s ease-out;
-}
-
-.hero-content {
-  text-align: center;
-}
-
-.hero-title {
-  font-size: 48px;
-  font-weight: 700;
-  margin: 0 0 16px 0;
-  background: linear-gradient(135deg, #60a5fa 0%, #06b6d4 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+/* Typography refinements */
+h1, h2, h3, h4 {
   letter-spacing: -0.02em;
-  line-height: 1.1;
 }
 
-.hero-description {
-  font-size: 18px;
-  color: #9ca3af;
-  margin: 0;
-  line-height: 1.6;
-  max-width: 700px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* Progress Section */
-.progress-section {
-  animation: slideDown 0.4s ease-out;
-}
-
-/* Results Section */
-.results-section {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  animation: fadeIn 0.5s ease-out;
-}
-
-/* Success Banner */
-.success-banner {
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.3);
-  border-radius: 12px;
-  padding: 20px 24px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  color: #86efac;
-}
-
-.success-content h3 {
-  margin: 0 0 4px 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #86efac;
-}
-
-.success-content p {
-  margin: 0;
-  font-size: 14px;
-  color: #6ee7b7;
-  line-height: 1.5;
-}
-
-/* Spec Container */
-.spec-container {
-  animation: slideUp 0.4s ease-out 0.1s backwards;
-}
-
-/* Viewer Container */
-.viewer-container {
-  background: rgba(15, 20, 31, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.4s ease-out 0.2s backwards;
-}
-
-.viewer-header {
-  background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-  padding: 20px 24px;
-}
-
-.viewer-header h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: white;
-  letter-spacing: -0.01em;
-}
-
-.viewer-canvas {
-  height: 600px;
-  background: linear-gradient(135deg, #0f1419 0%, #1a1f35 100%);
-  position: relative;
-}
-
-/* BOM Container */
-.bom-container {
-  animation: slideUp 0.4s ease-out 0.3s backwards;
-}
-
-/* Footer */
-.app-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 32px 24px;
-  text-align: center;
-  margin-top: auto;
-  background: rgba(10, 14, 26, 0.5);
-}
-
-.app-footer p {
-  margin: 4px 0;
-  font-size: 13px;
-  color: #6b7280;
-  line-height: 1.6;
-}
-
-.app-footer p:first-child {
-  color: #9ca3af;
-}
-
-/* Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .content-wrapper {
-    max-width: 100%;
-  }
-
-  .hero-title {
-    font-size: 36px;
-  }
-
-  .hero-description {
-    font-size: 16px;
-  }
-
-  .viewer-canvas {
-    height: 400px;
-  }
-
-  .header-content {
-    padding: 12px 16px;
-  }
-
-  .logo-text h1 {
-    font-size: 16px;
-  }
-
-  .logo-text p {
-    font-size: 12px;
-  }
-}
-
-/* Smooth Scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+.font-mono-tabular {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-variant-numeric: tabular-nums;
 }

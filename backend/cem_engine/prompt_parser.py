@@ -194,18 +194,25 @@ class PromptParser:
           context, _ = self.llm_engine.start_conversation(session_id, enhanced_prompt)
           
           # Process prompt through LLM engine
-          llm_result = await self.llm_engine.process_prompt(session_id, enhanced_prompt, self)
+          llm_result = await self.llm_engine.process_prompt(session_id, enhanced_prompt)
+
+          if not llm_result.get("success"):
+              logger.error(f"LLM parsing failed: {llm_result.get('error')}")
+              # Fallback or raise
+              extracted_spec = {"device_type": intent_analysis["detected_device_type"]}
+          else:
+              extracted_spec = llm_result.get("specification", {})
           
           spec = {
-              "device_type": llm_result.get("device_type", intent_analysis["detected_device_type"]),
-              "dimensions": llm_result.get("dimensions", {}),
-              "loads": llm_result.get("loads", {}),
-              "motion": llm_result.get("motion", {}),
-              "materials": llm_result.get("materials", ["PLA"]),
-              "manufacturing": llm_result.get("manufacturing", "FDM"),
-              "components": llm_result.get("components", []),
-              "environment": llm_result.get("environment", {}),
-              "requirements": llm_result.get("requirements", {}),
+              "device_type": extracted_spec.get("device_type", intent_analysis["detected_device_type"]),
+              "dimensions": extracted_spec.get("dimensions", {}),
+              "loads": extracted_spec.get("loads", {}),
+              "motion": extracted_spec.get("motion", {}),
+              "materials": extracted_spec.get("materials", ["PLA"]),
+              "manufacturing": extracted_spec.get("manufacturing", "FDM"),
+              "components": extracted_spec.get("components", []),
+              "environment": extracted_spec.get("environment", {}),
+              "requirements": extracted_spec.get("requirements", {}),
           }
           
           confidence = llm_result.get("confidence_score", intent_analysis["specificity"])

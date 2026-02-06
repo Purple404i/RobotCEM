@@ -11,7 +11,14 @@ services:
       - ../backend:/app/backend
       - ../csharp_runtime:/app/csharp_runtime
     environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OLLAMA_BASE_URL=http://ollama:11434
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
 
   frontend:
     build:
@@ -21,3 +28,6 @@ services:
       - "3000:80"
     depends_on:
       - backend
+
+volumes:
+  ollama_data:

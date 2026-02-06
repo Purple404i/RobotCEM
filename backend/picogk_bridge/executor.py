@@ -222,7 +222,8 @@ class PicoGKExecutor:
             metadata = self._load_metadata(output_name)
             
             # Analyze STL
-            stl_analysis = await self._analyze_stl(output_stl)
+            density = design_specs.get("material_density_g_cm3", 1.25) if design_specs else 1.25
+            stl_analysis = await self._analyze_stl(output_stl, density=density)
             
             return {
                 "success": True,
@@ -414,7 +415,7 @@ namespace RobotCEM.Generated
             process.kill()
             raise Exception(f"Command timed out after {timeout}s")
     
-    async def _analyze_stl(self, stl_path: Path) -> Dict:
+    async def _analyze_stl(self, stl_path: Path, density: float = 1.25) -> Dict:
         """Analyze STL file properties using trimesh"""
         
         try:
@@ -424,12 +425,15 @@ namespace RobotCEM.Generated
             
             bounds = mesh.bounds
             dimensions = bounds[1] - bounds[0]
+            volume_cm3 = float(mesh.volume / 1000)
+            mass_g = volume_cm3 * density
             
             return {
                 "vertices": int(len(mesh.vertices)),
                 "faces": int(len(mesh.faces)),
                 "volume_mm3": float(mesh.volume),
-                "volume_cm3": float(mesh.volume / 1000),
+                "volume_cm3": volume_cm3,
+                "mass_g": mass_g,
                 "surface_area_mm2": float(mesh.area),
                 "bounds": {
                     "min": bounds[0].tolist(),
@@ -438,7 +442,8 @@ namespace RobotCEM.Generated
                 "dimensions_mm": dimensions.tolist(),
                 "is_watertight": bool(mesh.is_watertight),
                 "is_valid": bool(mesh.is_valid),
-                "center_of_mass": mesh.center_mass.tolist() if hasattr(mesh, 'center_mass') else [0, 0, 0]
+                "center_of_mass": mesh.center_mass.tolist() if hasattr(mesh, 'center_mass') else [0, 0, 0],
+                "moment_of_inertia": mesh.moment_inertia.tolist() if hasattr(mesh, 'moment_inertia') else []
             }
             
         except Exception as e:
